@@ -15,23 +15,35 @@ class MainTamg:
         image = pygame.image.load(path).convert_alpha()
         return image
     
-    def run_right(self):
+    def run_right(self, size=False):
         """Получение списка движения вправо"""
         walk = [
             pygame.image.load("fox/fox_right/fox_right_1.png").convert_alpha(),
             pygame.image.load("fox/fox_right/fox_right_2.png").convert_alpha(),
             pygame.image.load("fox/fox_right/fox_right_3.png").convert_alpha()
         ]
-        return walk
+        
+        walk_full = [
+            pygame.image.load("fox/fox_right/fox_right_1_full.png"),
+            pygame.image.load("fox/fox_right/fox_right_2_full.png"),
+            pygame.image.load("fox/fox_right/fox_right_3_full.png")
+        ]
+        return walk if not size else walk_full
     
-    def run_left(self):
+    def run_left(self, size=False):
         """Получение списка движения влево"""
         walk = [
             pygame.image.load("fox/fox_left/fox_left_1.png").convert_alpha(),
             pygame.image.load("fox/fox_left/fox_left_2.png").convert_alpha(),
             pygame.image.load("fox/fox_left/fox_left_3.png").convert_alpha()
         ]
-        return walk
+        
+        walk_full = [
+            pygame.image.load("fox/fox_left/fox_left_1_full.png"),
+            pygame.image.load("fox/fox_left/fox_left_2_full.png"),
+            pygame.image.load("fox/fox_left/fox_left_3_full.png")
+        ]
+        return walk if not size else walk_full
 
     def start_coords(self):
         """Стартовые координаты питомца"""
@@ -86,6 +98,9 @@ def main():
     fullscreen = tamg.image_to_alpha("icons/fullscreen.png")
     fullscreen_rect = fullscreen.get_rect(topleft=(547, 296))
     
+    minimise = tamg.image_to_alpha("icons\minimise.png")
+    minimise_rect = minimise.get_rect(topleft=(x - 32, 0))
+    
     walk_right = tamg.run_right()
     walk_left = tamg.run_left()
     
@@ -116,7 +131,7 @@ def main():
             
             # НЕ ТРОГАТЬ
             # движение по оси x влево и вправо
-            if keys[pygame.K_a] or keys[pygame.K_LEFT] and player_x > 30:
+            if (keys[pygame.K_a] or keys[pygame.K_LEFT]) and player_x > 30:
                 player_x -= player_speed
                 walk = walk_left
                 try:
@@ -125,7 +140,7 @@ def main():
                 except:
                     walk_count = 0
                     screen.blit(walk[walk_count], (player_x, player_y))
-            elif keys[pygame.K_d] or keys[pygame.K_RIGHT] and player_x < 400:
+            elif (keys[pygame.K_d] or keys[pygame.K_RIGHT]) and player_x < 400:
                 player_x += player_speed
                 walk = walk_right
                 try:
@@ -178,12 +193,16 @@ def main():
             
             mouse = pygame.mouse.get_pos()
             
-            if fullscreen_rect.collidepoint(mouse) and pygame.mouse.get_pressed()[0]:
+            if (fullscreen_rect.collidepoint(mouse) and pygame.mouse.get_pressed()[0]) or keys[pygame.K_f]:
                 full = True
                 
-                player_x, player_y = 150, y - 75
-                jump_count = 15
+                player_x, player_y = 150, y - 150
+                jump_count = 10
                 player_speed *= 2
+                
+                walk_right = tamg.run_right(True)
+                walk_left = tamg.run_left(True)
+                walk = walk_right[:]
             
             """Fullscreen, Enemy, etc finish"""
         else:
@@ -220,7 +239,7 @@ def main():
                 if keys[pygame.K_SPACE]:
                     jump_f = True
             else:
-                if jump_count >= -15:
+                if jump_count >= -10:
                     if jump_count > 0:
                         player_y -= (jump_count ** 2) / 2
                     else:
@@ -228,7 +247,24 @@ def main():
                     jump_count -= 1
                 else:
                     jump_f = False
-                    jump_count = 15
+                    jump_count = 10
+            
+            pygame.draw.rect(screen, "white", (x - 32, 0, 32, 32))
+            screen.blit(minimise, minimise_rect)
+            
+            mouse = pygame.mouse.get_pos()
+            
+            if keys[pygame.K_ESCAPE] or (minimise_rect.collidepoint(mouse) and pygame.mouse.get_pressed()[0]):
+                full = False
+                
+                player_x, player_y = tamg.start_coords()
+                player_speed //= 2
+                
+                walk_right = tamg.run_right()
+                walk_left = tamg.run_left()
+                walk = walk_right[:]
+                
+                jump_count = 8
             
         
         pygame.display.update()
