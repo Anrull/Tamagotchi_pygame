@@ -7,12 +7,15 @@ class MainTamg:
     def __init__(self, x, y):
         self.x = x
         self.y = y
+        self.combat_power = 300
         
-    def image_to_alpha(self):
-        image = pygame.image.load("fox/fox_main_lvl1.png").convert_alpha()
+    def image_to_alpha(self, path):
+        """For format png"""
+        image = pygame.image.load(path).convert_alpha()
         return image
     
     def run_right(self):
+        """Получение списка движения вправо"""
         walk = [
             pygame.image.load("fox/fox_right/fox_right_1.png").convert_alpha(),
             pygame.image.load("fox/fox_right/fox_right_2.png").convert_alpha(),
@@ -21,6 +24,7 @@ class MainTamg:
         return walk
     
     def run_left(self):
+        """Получение списка движения влево"""
         walk = [
             pygame.image.load("fox/fox_left/fox_left_1.png").convert_alpha(),
             pygame.image.load("fox/fox_left/fox_left_2.png").convert_alpha(),
@@ -29,7 +33,20 @@ class MainTamg:
         return walk
 
     def start_coords(self):
+        """Стартовые координаты питомца"""
         return (30, 200)
+    
+    def add_CP(self):
+        """Добавление Боевой Мощи"""
+        self.combat_power += 10
+    
+    def min_CP(self):
+        """Вычитание БМ"""
+        self.combat_power -= 10
+    
+    def show_CP(self):
+        """Получение БМ"""
+        return self.combat_power
       
 
 def main():
@@ -44,7 +61,7 @@ def main():
     running = True
     
     background = pygame.image.load("background_1.jpg").convert()
-    image = tamg.image_to_alpha() # выбери сам если не нравится
+    image = tamg.image_to_alpha("fox/fox_main_lvl1.png") # выбери сам если не нравится
     image = pygame.transform.scale(image, (500, 300))
     
     walk_right = tamg.run_right()
@@ -55,15 +72,21 @@ def main():
     player_x, player_y = tamg.start_coords()
     player_speed = 7
     
+    jump_f = False
+    jump_count = 8
+    
     walk = walk_right[:]
     
     while running:
-        screen.fill((52, 64, 52)) # (65, 138, 65) / (92, 163, 92) / (54, 92, 54) / выбери сам
-        screen.blit(background, (0, 0))
+        screen.fill((255, 255, 255)) # (65, 138, 65) / (92, 163, 92) / (54, 92, 54) / выбери сам / (52, 64, 52)
+        screen.blit(background, (0, 0)) # НЕ ТРОГАТЬ
         screen.blit(image, (x // 2, 0))
         
         keys = pygame.key.get_pressed()
         
+        
+        # НЕ ТРОГАТЬ
+        # движение по оси x влево и вправо
         if keys[pygame.K_a] or keys[pygame.K_LEFT] and player_x > 30:
             player_x -= player_speed
             walk = walk_left
@@ -84,21 +107,33 @@ def main():
                 screen.blit(walk[walk_count], (player_x, player_y))
         else:
             screen.blit(walk[0], (player_x, player_y))
-            
-        # try:
-        #     background.blit(walk[walk_count], (player_x, player_y))
-        #     walk_count += 1
-        # except:
-        #     walk_count = 0
-        #     background.blit(walk[walk_count], (player_x, player_y))
+        
+        # НЕ ТРОГАТЬ 
+        # прыжок
+        if not jump_f:
+            if keys[pygame.K_SPACE]:
+                jump_f = True
+        else:
+            if jump_count >= -8:
+                if jump_count > 0:
+                    player_y -= (jump_count ** 2) / 2
+                else:
+                    player_y += (jump_count ** 2) / 2
+                jump_count -= 1
+            else:
+                jump_f = False
+                jump_count = 8
+        
+        
+        pygame.draw.line(screen, "black", (500, 300), (x, 300), 2)
         
         pygame.display.update()
-    
+        
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
                 pygame.quit()
-                
+               
         clock.tick(15)
 
 
