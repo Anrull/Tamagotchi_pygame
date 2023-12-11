@@ -56,6 +56,14 @@ class MainTamg:
             pygame.image.load("background/background_3_small.png").convert_alpha()
             ]
         return images[idd]
+    
+    def full_image_to_alpha(self, idd):
+        """For format png"""
+        images = [
+            pygame.image.load("background/background_2_full.png").convert_alpha(),
+            pygame.image.load("background/background_3_full.png").convert_alpha()
+            ]
+        return images[idd]
 
 def main():
     x, y = 1280, 720
@@ -70,7 +78,8 @@ def main():
     
     running = True
     
-    background = tamg.image_to_alpha("background/background_1_new.png")
+    background = tamg.small_image_to_alpha(idd)
+    background_full = tamg.full_image_to_alpha(idd)
     image = tamg.image_to_alpha("fox/fox_main_lvl1.png") # выбери сам если не нравится
     image = pygame.transform.scale(image, (500, 300))
     
@@ -172,9 +181,55 @@ def main():
             if fullscreen_rect.collidepoint(mouse) and pygame.mouse.get_pressed()[0]:
                 full = True
                 
-                # player_x, player_y = 
+                player_x, player_y = 150, y - 75
+                jump_count = 15
+                player_speed *= 2
             
             """Fullscreen, Enemy, etc finish"""
+        else:
+            screen.blit(background_full, (0, 0)) # НЕ ТРОГАТЬ
+            
+            keys = pygame.key.get_pressed()
+            
+            # НЕ ТРОГАТЬ
+            # движение по оси x влево и вправо
+            if keys[pygame.K_a] or keys[pygame.K_LEFT] and player_x > 30:
+                player_x -= player_speed
+                walk = walk_left
+                try:
+                    screen.blit(walk[walk_count], (player_x, player_y))
+                    walk_count += 1
+                except:
+                    walk_count = 0
+                    screen.blit(walk[walk_count], (player_x, player_y))
+            elif keys[pygame.K_d] or keys[pygame.K_RIGHT] and player_x < (x - 50):
+                player_x += player_speed
+                walk = walk_right
+                try:
+                    screen.blit(walk[walk_count], (player_x, player_y))
+                    walk_count += 1
+                except:
+                    walk_count = 0
+                    screen.blit(walk[walk_count], (player_x, player_y))
+            else:
+                screen.blit(walk[0], (player_x, player_y))
+            
+            # НЕ ТРОГАТЬ 
+            # прыжок
+            if not jump_f:
+                if keys[pygame.K_SPACE]:
+                    jump_f = True
+            else:
+                if jump_count >= -15:
+                    if jump_count > 0:
+                        player_y -= (jump_count ** 2) / 2
+                    else:
+                        player_y += (jump_count ** 2) / 2
+                    jump_count -= 1
+                else:
+                    jump_f = False
+                    jump_count = 15
+            
         
         pygame.display.update()
         
@@ -182,7 +237,7 @@ def main():
             if event.type == pygame.QUIT:
                 running = False
                 pygame.quit()
-               
+                
         clock.tick(15)
 
 
