@@ -29,13 +29,15 @@ class MainTamg:
         return walk
 
     def start_coords(self):
-        return (30, 30)
+        return (30, 200)
       
 
 def main():
     x, y = 1280, 720    
     screen = pygame.display.set_mode((x, y))
     pygame.display.set_caption("Тамагочи")
+    
+    clock = pygame.time.Clock()
     
     tamg = MainTamg(x, y)
     
@@ -51,6 +53,9 @@ def main():
     walk_count = 0
     
     player_x, player_y = tamg.start_coords()
+    player_speed = 7
+    
+    walk = walk_right[:]
     
     while running:
         screen.fill((52, 64, 52)) # (65, 138, 65) / (92, 163, 92) / (54, 92, 54) / выбери сам
@@ -59,12 +64,42 @@ def main():
         
         keys = pygame.key.get_pressed()
         
+        if keys[pygame.K_a] or keys[pygame.K_LEFT] and player_x > 30:
+            player_x -= player_speed
+            walk = walk_left
+            try:
+                screen.blit(walk[walk_count], (player_x, player_y))
+                walk_count += 1
+            except:
+                walk_count = 0
+                screen.blit(walk[walk_count], (player_x, player_y))
+        elif keys[pygame.K_d] or keys[pygame.K_RIGHT] and player_x < 400:
+            player_x += player_speed
+            walk = walk_right
+            try:
+                screen.blit(walk[walk_count], (player_x, player_y))
+                walk_count += 1
+            except:
+                walk_count = 0
+                screen.blit(walk[walk_count], (player_x, player_y))
+        else:
+            screen.blit(walk[0], (player_x, player_y))
+            
+        # try:
+        #     background.blit(walk[walk_count], (player_x, player_y))
+        #     walk_count += 1
+        # except:
+        #     walk_count = 0
+        #     background.blit(walk[walk_count], (player_x, player_y))
+        
         pygame.display.update()
     
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
                 pygame.quit()
+                
+        clock.tick(15)
 
 
 if __name__ == "__main__":
