@@ -34,8 +34,8 @@ class MainTamg:
 
     def start_coords(self):
         """Стартовые координаты питомца"""
-        return (30, 200)
-    
+        return (30, 250)
+
     def add_CP(self):
         """Добавление Боевой Мощи"""
         self.combat_power += 10
@@ -60,9 +60,12 @@ def main():
     
     running = True
     
-    background = pygame.image.load("background_1.jpg").convert()
+    background = tamg.image_to_alpha("background_1_new.png")
     image = tamg.image_to_alpha("fox/fox_main_lvl1.png") # выбери сам если не нравится
     image = pygame.transform.scale(image, (500, 300))
+    
+    fullscreen = tamg.image_to_alpha("fullscreen.png")
+    fullscreen_rect = fullscreen.get_rect(topleft=(531, 280))
     
     walk_right = tamg.run_right()
     walk_left = tamg.run_left()
@@ -76,6 +79,10 @@ def main():
     jump_count = 8
     
     walk = walk_right[:]
+    
+    label = pygame.font.Font(size=40)
+    info = label.render("Information", False, "green")
+    info_rect = info.get_rect(topleft=(870, 340))
     
     while running:
         screen.fill((255, 255, 255)) # (65, 138, 65) / (92, 163, 92) / (54, 92, 54) / выбери сам / (52, 64, 52)
@@ -124,8 +131,27 @@ def main():
                 jump_f = False
                 jump_count = 8
         
+        """Information"""
+        pygame.draw.line(screen, "black", (571, 317), (x, 317), 3)
+        pygame.draw.line(screen, "black", (426, 320), (426, y), 2)
+        pygame.draw.line(screen, "black", (853, 320), (853, y), 2)
         
-        pygame.draw.line(screen, "black", (500, 300), (x, 300), 2)
+        info_x = label.render(f"Позиция x: {player_x}", False, "green")
+        info_y = label.render(f"Позиция y: {player_y}", False, "green")
+        info_speed = label.render(f"Скорость перемещения: {player_speed}", False, "green")
+        info_x_rect = info_x.get_rect(topleft=(870, 380))
+        info_y_rect = info_y.get_rect(topleft=(870, 420))
+        info_speed_rect = info_speed.get_rect(topleft=(870, 460))
+        
+        screen.blit(info, info_rect)
+        screen.blit(info_x, info_x_rect)
+        screen.blit(info_y, info_y_rect)
+        screen.blit(info_speed, info_speed_rect)
+        """Information finish"""
+        
+        
+        """Fullscreen, Enemy, etc"""
+        screen.blit(fullscreen, fullscreen_rect)
         
         pygame.display.update()
         
