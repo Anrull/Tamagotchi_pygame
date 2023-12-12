@@ -1,5 +1,6 @@
 import pygame
 import random
+import time
 
 pygame.init()
 
@@ -77,58 +78,145 @@ class MainTamg:
             ]
         return images[idd]
 
+
+class Enemy(pygame.sprite.Sprite):
+    def __init__(self, x=500, y=250, speed=7, filename="enemy/ghost_small.png"):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = pygame.image.load(filename).convert_alpha()
+        self.rect = self.image.get_rect(topleft=(x, y))
+        self.speed = speed
+    
+    def update(self):
+        self.rect.x -= self.speed
+    
+    def check(self):
+        return self.rect.x < -10
+
+
+COLOR_INACTIVE = pygame.Color('lightskyblue3')
+COLOR_ACTIVE = pygame.Color('dodgerblue2')
+FONT = pygame.font.Font(None, 32)
+
+
+class InputBox:
+    def __init__(self, x, y, w, h, text=''):
+        self.rect = pygame.Rect(x, y, w, h)
+        self.color = COLOR_INACTIVE
+        self.text = text
+        self.txt_surface = FONT.render(text, True, self.color)
+        self.active = False
+
+    def handle_event(self, event):
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            # If the user clicked on the input_box rect.
+            if self.rect.collidepoint(event.pos):
+                # Toggle the active variable.
+                self.active = not self.active
+            else:
+                self.active = False
+            # Change the current color of the input box.
+            self.color = COLOR_ACTIVE if self.active else COLOR_INACTIVE
+        if event.type == pygame.KEYDOWN:
+            if self.active:
+                if event.key == pygame.K_RETURN:
+                    print(self.text)
+                    self.text = ''
+                elif event.key == pygame.K_BACKSPACE:
+                    self.text = self.text[:-1]
+                else:
+                    self.text += event.unicode
+                # Re-render the text.
+                self.txt_surface = FONT.render(self.text, True, self.color)
+
+    def update(self):
+        # Resize the box if the text is too long.
+        width = max(200, self.txt_surface.get_width()+10)
+        self.rect.w = width
+
+    def draw(self, screen):
+        # Blit the text.
+        screen.blit(self.txt_surface, (self.rect.x+5, self.rect.y+5))
+        # Blit the rect.
+        pygame.draw.rect(screen, self.color, self.rect, 2)
+
+
+# def draw_enemy(screen, enemy, size=False, speed=7):
+#     if not size:
+#         screen.blit(enemy.image, enemy.rect)
+        
+#         enemy.rect.x -= speed
+
 def main():
-    x, y = 1280, 720
-    idd = random.randint(0, 1)
-    print(idd)  
+    x, y = 1280, 720 # размер экрана
+    idd = random.randint(0, 1) # случайный выбор фона 
     screen = pygame.display.set_mode((x, y))
     pygame.display.set_caption("Тамагочи")
-    
+
     clock = pygame.time.Clock()
-    
+
     tamg = MainTamg(x, y)
-    
-    running = True
-    
-    background = tamg.small_image_to_alpha(idd)
-    background_full = tamg.full_image_to_alpha(idd)
+
+    running = True # пока истина - работает
+
+    background = tamg.small_image_to_alpha(idd) # малый задний фон
+    background_full = tamg.full_image_to_alpha(idd) # большой задний фон
     image = tamg.image_to_alpha("fox/fox_main_lvl1.png") # выбери сам если не нравится
-    image = pygame.transform.scale(image, (500, 300))
-    
+    image = pygame.transform.scale(image, (500, 300)) # отформатирование животного, чтоб влезало
+
     fullscreen = tamg.image_to_alpha("icons/fullscreen.png")
     fullscreen_rect = fullscreen.get_rect(topleft=(547, 296))
-    
+
     minimise = tamg.image_to_alpha("icons\minimise.png")
     minimise_rect = minimise.get_rect(topleft=(x - 32, 0))
-    
+
     walk_right = tamg.run_right()
     walk_left = tamg.run_left()
-    
+
     walk_count = 0
-    
+
     player_x, player_y = tamg.start_coords()
     player_speed = 7
-    
+
     jump_f = False
     jump_count = 8
-    
+
     walk = walk_right[:]
-    
+
     label = pygame.font.Font(size=40)
     info = label.render("Information", False, "green")
     info_rect = info.get_rect(topleft=(870, 340))
-    
+
+    add_enemy5_button = label.render("Добавить 5 врагов", False, "green")
+    add_enemy5_button_rect = add_enemy5_button.get_rect(topleft=(446, 360))
+
+    timer_button_enemy_5 = pygame.USEREVENT + 1
+    pygame.time.set_timer(timer_button_enemy_5, 0)
+
     full = False
-    
+
+    enemies = pygame.sprite.Group()
+    # enemies = []
+
     while running:
         if not full:
             screen.fill((255, 255, 255)) # (65, 138, 65) / (92, 163, 92) / (54, 92, 54) / выбери сам / (52, 64, 52)
             screen.blit(background, (0, 0)) # НЕ ТРОГАТЬ
             screen.blit(image, (x // 2, 0))
-            
+            # draw_enemy(screen, enemy)
+
             keys = pygame.key.get_pressed()
-            
-            
+            # events = pygame.event.get()
+
+            if enemies:
+                # for el in enemies:
+                #     el.update()
+                #     # flag = el.check()
+                #     # if not flag:
+                #     #     enemies[0]
+                enemies.draw(screen)
+                enemies.update()
+
+
             # НЕ ТРОГАТЬ
             # движение по оси x влево и вправо
             if (keys[pygame.K_a] or keys[pygame.K_LEFT]) and player_x > 30:
@@ -151,7 +239,7 @@ def main():
                     screen.blit(walk[walk_count], (player_x, player_y))
             else:
                 screen.blit(walk[0], (player_x, player_y))
-            
+
             # НЕ ТРОГАТЬ 
             # прыжок
             if not jump_f:
@@ -167,43 +255,54 @@ def main():
                 else:
                     jump_f = False
                     jump_count = 8
-            
+
             """Information"""
             pygame.draw.line(screen, "black", (571, 317), (x, 317), 3)
             pygame.draw.line(screen, "black", (426, 320), (426, y), 2)
             pygame.draw.line(screen, "black", (853, 320), (853, y), 2)
-            
+
             info_x = label.render(f"Позиция x: {player_x}", False, "green")
             info_y = label.render(f"Позиция y: {player_y}", False, "green")
             info_speed = label.render(f"Скорость перемещения: {player_speed}", False, "green")
             info_x_rect = info_x.get_rect(topleft=(870, 380))
             info_y_rect = info_y.get_rect(topleft=(870, 420))
             info_speed_rect = info_speed.get_rect(topleft=(870, 460))
-            
+
             screen.blit(info, info_rect)
             screen.blit(info_x, info_x_rect)
             screen.blit(info_y, info_y_rect)
             screen.blit(info_speed, info_speed_rect)
             """Information finish"""
-            
-            
+
+
             """Fullscreen, Enemy, etc"""
             pygame.draw.rect(screen, "white", (539, 288, 32, 32))
             screen.blit(fullscreen, fullscreen_rect)
-            
+            screen.blit(add_enemy5_button, add_enemy5_button_rect)
+
             mouse = pygame.mouse.get_pos()
-            
+
             if (fullscreen_rect.collidepoint(mouse) and pygame.mouse.get_pressed()[0]) or keys[pygame.K_f]:
-                full = True
+                """Вывод изображения на фулл экран"""
+                time.sleep(0.05)
                 
+                full = True
+
                 player_x, player_y = 150, y - 150
                 jump_count = 10
                 player_speed *= 2
-                
+
                 walk_right = tamg.run_right(True)
                 walk_left = tamg.run_left(True)
                 walk = walk_right[:]
             
+            if (add_enemy5_button_rect.collidepoint(mouse) and pygame.mouse.get_pressed()[0]):
+                time.sleep(0.2) # необходимо для того, чтоб не вызывалось сразу несколько врагов.
+                                # знаешь как исправить - сделай по другому
+                pos_x = 500
+                for i in range(5):
+                    enemies.add(Enemy(pos_x, y=250))
+                    pos_x -= 50
             """Fullscreen, Enemy, etc finish"""
         else:
             screen.blit(background_full, (0, 0)) # НЕ ТРОГАТЬ
@@ -254,7 +353,8 @@ def main():
             
             mouse = pygame.mouse.get_pos()
             
-            if keys[pygame.K_ESCAPE] or (minimise_rect.collidepoint(mouse) and pygame.mouse.get_pressed()[0]):
+            if keys[pygame.K_ESCAPE] or keys[pygame.K_f] or (minimise_rect.collidepoint(mouse) and pygame.mouse.get_pressed()[0]):
+                time.sleep(0.05)
                 full = False
                 
                 player_x, player_y = tamg.start_coords()
@@ -265,15 +365,15 @@ def main():
                 walk = walk_right[:]
                 
                 jump_count = 8
-            
-        
+
+
         pygame.display.update()
-        
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
                 pygame.quit()
-                
+
         clock.tick(15)
 
 
