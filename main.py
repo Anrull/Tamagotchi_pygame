@@ -95,12 +95,12 @@ class Enemy(pygame.sprite.Sprite):
 
 COLOR_INACTIVE = pygame.Color('lightskyblue3')
 COLOR_ACTIVE = pygame.Color('dodgerblue2')
-FONT = pygame.font.Font(None, 32)
+FONT = pygame.font.Font(None, 40)
 
 
 class InputBox:
     def __init__(self, x, y, w, h, text=''):
-        self.rect = pygame.Rect(x, y, w, h)
+        self.rect = pygame.Rect(x, y, 5, 5)
         self.color = COLOR_INACTIVE
         self.text = text
         self.txt_surface = FONT.render(text, True, self.color)
@@ -193,6 +193,9 @@ def main():
         count_enemies = 5
         
         enemies_full = pygame.sprite.Group()
+        
+        input_box_enemies = InputBox(x=446, y=390, w=10, h=40)
+        input_boxes = [input_box_enemies]
 
     while running:
         keys = pygame.key.get_pressed()
@@ -206,7 +209,7 @@ def main():
                 pygame.draw.line(screen, "black", (571, 317), (x, 317), 3)
                 pygame.draw.line(screen, "black", (426, 320), (426, y), 2)
                 pygame.draw.line(screen, "black", (853, 320), (853, y), 2)
-            
+                
             if True: # Infromation # Нужно для того, чтоб скрыть и упростить навигацию
                 """Information{"""
                 info_x = label.render(f"Позиция x: {player_x}", False, "green")
@@ -225,6 +228,12 @@ def main():
             if True: # Enemy, Fullscreen, etc
                 """Enemy, Fullscreen, etc{"""
                 screen.blit(add_enemy5_button, add_enemy5_button_rect)
+
+                for box in input_boxes:
+                    box.update()
+                
+                for box in input_boxes:
+                    box.draw(screen)
                 
                 if enemies:
                     enemies.draw(screen)
@@ -393,7 +402,8 @@ def main():
                         for i in range(count_enemies):
                             enemies_full.add(Enemy(x = pos_x, y = y - 200, filename="enemy/ghost_full.png"))
                             pos_x -= 200
-
+            for box in input_boxes:
+                box.handle_event(event)
         pygame.display.update()
 
         clock.tick(15)
@@ -401,3 +411,27 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
+# def main():
+#     clock = pg.time.Clock()
+#     input_box1 = InputBox(100, 100, 140, 32)
+#     input_box2 = InputBox(100, 300, 140, 32)
+#     input_boxes = [input_box1, input_box2]
+#     done = False
+
+#     while not done:
+#         for event in pg.event.get():
+#             if event.type == pg.QUIT:
+#                 done = True
+#             for box in input_boxes:
+#                 box.handle_event(event)
+
+#         for box in input_boxes:
+#             box.update()
+
+#         screen.fill((30, 30, 30))
+#         for box in input_boxes:
+#             box.draw(screen)
+
+#         pg.display.flip()
+#         clock.tick(30)
