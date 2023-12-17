@@ -96,17 +96,19 @@ class Enemy(pygame.sprite.Sprite):
 COLOR_INACTIVE = pygame.Color('lightskyblue3')
 COLOR_ACTIVE = pygame.Color('dodgerblue2')
 FONT = pygame.font.Font(None, 40)
+global_SM_enemies = 5 # Summoning_multiple_enemies
 
 
 class InputBox:
     def __init__(self, x, y, w, h, text=''):
-        self.rect = pygame.Rect(x, y, 5, 5)
+        self.rect = pygame.Rect(x, y, w, h)
         self.color = COLOR_INACTIVE
         self.text = text
         self.txt_surface = FONT.render(text, True, self.color)
         self.active = False
 
     def handle_event(self, event):
+        global global_SM_enemies
         if event.type == pygame.MOUSEBUTTONDOWN:
             # If the user clicked on the input_box rect.
             if self.rect.collidepoint(event.pos):
@@ -115,12 +117,19 @@ class InputBox:
             else:
                 self.active = False
             # Change the current color of the input box.
-            self.color = COLOR_ACTIVE if self.active else COLOR_INACTIVE
+            if self.active:
+                self.color = COLOR_ACTIVE
+            else:
+                self.color = COLOR_INACTIVE
+                self.text = ""
         if event.type == pygame.KEYDOWN:
             if self.active:
                 if event.key == pygame.K_RETURN:
                     print(self.text)
-                    self.text = ''
+                    try:
+                        global_SM_enemies = int(self.text)
+                    except:
+                        self.text = "Error"
                 elif event.key == pygame.K_BACKSPACE:
                     self.text = self.text[:-1]
                 else:
@@ -138,6 +147,9 @@ class InputBox:
         screen.blit(self.txt_surface, (self.rect.x+5, self.rect.y+5))
         # Blit the rect.
         pygame.draw.rect(screen, self.color, self.rect, 2)
+    
+    def clear_text(self):
+        self.text = ""
 
 
 def main():
@@ -194,7 +206,10 @@ def main():
         
         enemies_full = pygame.sprite.Group()
         
-        input_box_enemies = InputBox(x=446, y=390, w=10, h=40)
+        add_some_enemies = label.render("Добавить", False, "green")
+        add_some_enemies_rect = add_some_enemies.get_rect(topleft=(446, y - 55))
+        
+        input_box_enemies = InputBox(x=446 + 140, y=y - 60, w=10, h=40)
         input_boxes = [input_box_enemies]
 
     while running:
@@ -238,6 +253,8 @@ def main():
                 if enemies:
                     enemies.draw(screen)
                     enemies.update()
+                
+                screen.blit(add_some_enemies, add_some_enemies_rect)
                 
                 pygame.draw.rect(screen, "white", (539, 288, 32, 32))
                 screen.blit(fullscreen, fullscreen_rect)
@@ -393,6 +410,11 @@ def main():
                 if add_enemy5_button_rect.collidepoint(pos_mouse):
                     pos_x = 500
                     for i in range(count_enemies):
+                        enemies.add(Enemy(pos_x, y=250))
+                        pos_x -= 50
+                if add_some_enemies_rect.collidepoint(pos_mouse):
+                    pos_x = 500
+                    for i in range(global_SM_enemies):
                         enemies.add(Enemy(pos_x, y=250))
                         pos_x -= 50
             if event.type == timer_button_enemy_5:
