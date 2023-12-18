@@ -6,10 +6,13 @@ pygame.init()
 
 
 class MainTamg:
-    def __init__(self, x, y):
+    def __init__(self, x, y, health=1000, attack=100):
         self.x = x
         self.y = y
         self.combat_power = 300
+        
+        self.health = health
+        self.attack = attack
         
     def image_to_alpha(self, path):
         """For format png"""
@@ -78,19 +81,42 @@ class MainTamg:
             ]
         return images[idd]
 
+    def get_info(self):
+        dict_info = {
+            "CP": self.combat_power,
+            "hp": self.health,
+            "atc": self.attack
+        }
+        
+        return dict_info
+        
 
 class Enemy(pygame.sprite.Sprite):
-    def __init__(self, x=500, y=250, speed=7, filename="enemy/ghost_small.png"):
+    def __init__(self, x=500, y=250, speed=7, filename="enemy/ghost_small.png", health=50, attack=10):
         pygame.sprite.Sprite.__init__(self)
+        
         self.image = pygame.image.load(filename).convert_alpha()
         self.rect = self.image.get_rect(topleft=(x, y))
         self.speed = speed
+        
+        self.health = health
+        self.attack = attack
     
     def update(self):
         self.rect.x -= self.speed
+        
+        if self.rect.x < -10:
+            self.kill()
     
-    def check(self):
-        return self.rect.x < -10
+    def die(self):
+        if self.rect.x < -10:
+            self.kill()
+        # pass
+    
+    def get_info(self):
+        dict_info = {"x": self.rect.x, "y": self.rect.y,
+                     "hp": self.health, "atc": self.attack}
+        return dict_info
 
 
 COLOR_INACTIVE = pygame.Color('lightskyblue3')
@@ -433,27 +459,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
-# def main():
-#     clock = pg.time.Clock()
-#     input_box1 = InputBox(100, 100, 140, 32)
-#     input_box2 = InputBox(100, 300, 140, 32)
-#     input_boxes = [input_box1, input_box2]
-#     done = False
-
-#     while not done:
-#         for event in pg.event.get():
-#             if event.type == pg.QUIT:
-#                 done = True
-#             for box in input_boxes:
-#                 box.handle_event(event)
-
-#         for box in input_boxes:
-#             box.update()
-
-#         screen.fill((30, 30, 30))
-#         for box in input_boxes:
-#             box.draw(screen)
-
-#         pg.display.flip()
-#         clock.tick(30)
