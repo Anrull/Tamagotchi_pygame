@@ -1,8 +1,12 @@
 import pygame
 import random
 import time
+import sys
 
 pygame.init()
+
+sys.stdin = open("information_about_player.txt", "r", encoding="UTF-8")
+sys.stdout = open("information_about_player.txt", "w")
 
 global_flag_of_death = False
 
@@ -193,11 +197,13 @@ class Player(pygame.sprite.Sprite):
     def __init__(self, hp=1000, atc=50, x=30, y=250,
                  speed=7, jump_f=False, jump_count=8,
                  walk_count=0, walk_left=None,
-                 walk_right=None):
+                 walk_right=None, CP=300):
         
         pygame.sprite.Sprite.__init__(self)
         
-        self.atc, self.hp = atc, hp
+        self.CP = CP
+        self.atc, self.hp = 0, 0
+        self.start_atc, self.start_hp = atc, hp
         
         self.walk_left = walk_left
         self.walk_right = walk_right
@@ -255,6 +261,11 @@ class Player(pygame.sprite.Sprite):
             self.jump_f = False
             self.jump_count = self.start_jump_count
             self.rect.y = self.start_rect.y
+    
+    def update_combat_power(self):
+        for _ in range(1, self.CP, 1000):
+            self.atc, self.hp = self.atc + self.start_atc, self.start_hp + self.hp
+            print(self.CP)
 
 
 def main():
@@ -269,7 +280,8 @@ def main():
         walk_right = tamg.run_right()
         walk_left = tamg.run_left()
         
-        player = Player(walk_right=walk_right, walk_left=walk_left)
+        player = Player(walk_right=walk_right, walk_left=walk_left, CP=int(input()))
+        player.update_combat_power()
 
         clock = pygame.time.Clock()
 
