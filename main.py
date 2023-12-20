@@ -5,8 +5,8 @@ import sys
 
 pygame.init()
 
-sys.stdin = open("information_about_player.txt", "r", encoding="UTF-8")
-sys.stdout = open("information_about_player.txt", "w")
+sys.stdin = open("information_about_player.txt", "r+", encoding="UTF-8")
+sys.stdout = open("information_about_player.txt", "r+")
 
 global_flag_of_death = False
 
@@ -98,7 +98,7 @@ class MainTamg:
 class Enemy(pygame.sprite.Sprite):
     def __init__(self, x=500, y=250, speed=7,
                  filename="enemy/ghost_small.png",
-                 health=50, attack=10):
+                 health=100, attack=10):
         
         pygame.sprite.Sprite.__init__(self)
         
@@ -109,15 +109,21 @@ class Enemy(pygame.sprite.Sprite):
         self.health = health
         self.attack = attack
     
-    def update(self, pos_player):
+    def update(self, pos_player, player):
         global global_flag_of_death
         
         self.rect.x -= self.speed
         
         if pos_player.colliderect(self.rect):
-            global_flag_of_death = False
-            # print(1)
-            self.kill()
+            player.hp -= self.attack
+            self.health -= player.atc
+            if player.hp <= 0:
+                global_flag_of_death = True
+            if self.health <= 0:
+                player.CP += 5
+                player.update_combat_power()
+                self.kill()
+
         
         if self.rect.x < -10:
             self.kill()
@@ -193,7 +199,6 @@ class InputBox:
 
 
 class Player(pygame.sprite.Sprite):
-    tamg = MainTamg()
     def __init__(self, hp=1000, atc=50, x=30, y=250,
                  speed=7, jump_f=False, jump_count=8,
                  walk_count=0, walk_left=None,
@@ -202,7 +207,7 @@ class Player(pygame.sprite.Sprite):
         pygame.sprite.Sprite.__init__(self)
         
         self.CP = CP
-        self.atc, self.hp = 0, 0
+        self.atc, self.hp = atc, hp
         self.start_atc, self.start_hp = atc, hp
         
         self.walk_left = walk_left
@@ -263,9 +268,10 @@ class Player(pygame.sprite.Sprite):
             self.rect.y = self.start_rect.y
     
     def update_combat_power(self):
-        for _ in range(1, self.CP, 1000):
-            self.atc, self.hp = self.atc + self.start_atc, self.start_hp + self.hp
-            print(self.CP)
+        self.start_atc += 1
+        self.start_hp += 3
+        self.atc += 1
+        self.hp += 3
 
 
 def main():
@@ -280,7 +286,7 @@ def main():
         walk_right = tamg.run_right()
         walk_left = tamg.run_left()
         
-        player = Player(walk_right=walk_right, walk_left=walk_left, CP=int(input()))
+        player = Player(walk_right=walk_right, walk_left=walk_left, hp=int(input()), atc=int(input()), CP=int(input()))
         player.update_combat_power()
 
         clock = pygame.time.Clock()
@@ -289,6 +295,8 @@ def main():
 
         background = tamg.small_image_to_alpha(idd) # малый задний фон
         background_full = tamg.full_image_to_alpha(idd) # большой задний фон
+        gameover_small = pygame.image.load("gameover\gameover_small_1.png").convert()
+        gameover_full = pygame.image.load("gameover\gameover_full_1.jpg").convert
         image = tamg.image_to_alpha("fox/fox_main_lvl1.png") # выбери сам если не нравится
         image = pygame.transform.scale(image, (500, 300)) # отформатирование животного, чтоб влезало
 
@@ -328,8 +336,8 @@ def main():
         add_some_enemies = label.render("Добавить", False, "green")
         add_some_enemies_rect = add_some_enemies.get_rect(topleft=(446, y - 55))
         
-        input_box_enemies = InputBox(x=446 + 140, y=y - 60, w=10, h=40)
-        input_boxes = [input_box_enemies]
+        # input_box_enemies = InputBox(x=446 + 140, y=y - 60, w=10, h=40)
+        # input_boxes = [input_box_enemies]
         
         player_rect = walk[0].get_rect(topleft=(player_x, player_y))
 
@@ -360,52 +368,53 @@ def main():
                 screen.blit(info_y, info_y_rect)
                 screen.blit(info_speed, info_speed_rect)
                 """}Information"""
-            
-            if True: # Enemy, Fullscreen, etc
-                """Enemy, Fullscreen, etc{"""
-                screen.blit(add_enemy5_button, add_enemy5_button_rect)
+            if not global_flag_of_death:
+                if True: # Enemy, Fullscreen, etc
+                    """Enemy, Fullscreen, etc{"""
+                    screen.blit(add_enemy5_button, add_enemy5_button_rect)
 
-                # for box in input_boxes:
-                #     box.update()
+                    # for box in input_boxes:
+                    #     box.update()
+                    
+                    # for box in input_boxes:
+                    #     box.draw(screen)
+                    
+                    # screen.blit(add_some_enemies, add_some_enemies_rect)
+                    if enemies:
+                        enemies.draw(screen)
+                        # rect_player = pygame.rect(topleft=(player_x, player_y))
+                        enemies.update(player_rect, player)
+                    
+                    pygame.draw.rect(screen, "white", (539, 288, 32, 32))
+                    screen.blit(fullscreen, fullscreen_rect)
+                    """}Enemy, Fullscreen, etc"""
                 
-                # for box in input_boxes:
-                #     box.draw(screen)
+                if True: # Перемещение персонажа
+                    """Перемещение персонажа{"""
+                    if (keys[pygame.K_a] or keys[pygame.K_LEFT]) and player.rect.x > 30:
+                        run_lf = player.run_left()
+                        screen.blit(run_lf[0], run_lf[1])
+                    elif (keys[pygame.K_d] or keys[pygame.K_RIGHT]) and player.rect.x < 400:
+                        run_rght = player.run_right()
+                        screen.blit(run_rght[0], run_rght[1])
+                    else:
+                        # screen.blit(walk[0], (player_x, player_y))
+                        no_move = player.no_movement()
+                        screen.blit(no_move[0], no_move[1])
+                    
+                    player_rect = player.rect
+                    """}Перемещение пероснажа"""
                 
-                # screen.blit(add_some_enemies, add_some_enemies_rect)
-                
-                if enemies:
-                    enemies.draw(screen)
-                    # rect_player = pygame.rect(topleft=(player_x, player_y))
-                    enemies.update(player_rect)
-                
-                pygame.draw.rect(screen, "white", (539, 288, 32, 32))
-                screen.blit(fullscreen, fullscreen_rect)
-                """}Enemy, Fullscreen, etc"""
-            
-            if True: # Перемещение персонажа
-                """Перемещение персонажа{"""
-                if (keys[pygame.K_a] or keys[pygame.K_LEFT]) and player.rect.x > 30:
-                    run_lf = player.run_left()
-                    screen.blit(run_lf[0], run_lf[1])
-                elif (keys[pygame.K_d] or keys[pygame.K_RIGHT]) and player.rect.x < 400:
-                    run_rght = player.run_right()
-                    screen.blit(run_rght[0], run_rght[1])
-                else:
-                    # screen.blit(walk[0], (player_x, player_y))
-                    no_move = player.no_movement()
-                    screen.blit(no_move[0], no_move[1])
-                
-                player_rect = player.rect
-                """}Перемещение пероснажа"""
-            
-            if True: # Прыжок
-                """Прыжок{"""
-                if not player.jump_f:
-                    if keys[pygame.K_SPACE]:
-                        player.jump_f = True
-                else:
-                    player.jump()
-                """}Прыжок"""
+                if True: # Прыжок
+                    """Прыжок{"""
+                    if not player.jump_f:
+                        if keys[pygame.K_SPACE]:
+                            player.jump_f = True
+                    else:
+                        player.jump()
+                    """}Прыжок"""
+            else:
+                screen.blit(gameover_small, (0, 0))
         else: # для full screen
             screen.blit(background_full, (0, 0)) # НЕ ТРОГАТЬ
             
@@ -474,6 +483,9 @@ def main():
             
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
+                print(player.start_hp)
+                print(player.start_atc)
+                print(player.CP)
                 running = False
             if event.type == pygame.KEYDOWN:
                 if not full:
