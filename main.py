@@ -9,6 +9,7 @@ sys.stdin = open("information_about_player.txt", "r+", encoding="UTF-8")
 sys.stdout = open("information_about_player.txt", "r+")
 
 global_flag_of_death = False
+count_kill = 0
 
 
 class MainTamg:
@@ -110,7 +111,7 @@ class Enemy(pygame.sprite.Sprite):
         self.attack = attack
     
     def update(self, pos_player, player):
-        global global_flag_of_death
+        global global_flag_of_death, count_kill
         
         self.rect.x -= self.speed
         
@@ -122,6 +123,7 @@ class Enemy(pygame.sprite.Sprite):
             if self.health <= 0:
                 player.CP += 5
                 player.update_combat_power()
+                count_kill += 1
                 self.kill()
 
         
@@ -371,7 +373,15 @@ def main():
             if not global_flag_of_death:
                 if True: # Enemy, Fullscreen, etc
                     """Enemy, Fullscreen, etc{"""
+                    info_enemies_count = label.render(f"Врагов: {len(enemies)}", False, "green")
+                    info_enemies_count_rect = info_enemies_count.get_rect(topleft=(446, 400))
+                    
+                    info_enemies_count_kill = label.render(f"Убито: {count_kill}", False, "green")
+                    info_enemies_count_kill_rect = info_enemies_count.get_rect(topleft=(446, 440))
+                    
                     screen.blit(add_enemy5_button, add_enemy5_button_rect)
+                    screen.blit(info_enemies_count, info_enemies_count_rect)
+                    screen.blit(info_enemies_count_kill, info_enemies_count_kill_rect)
 
                     # for box in input_boxes:
                     #     box.update()
