@@ -9,7 +9,6 @@ sys.stdin = open("information_about_player.txt", "r+", encoding="UTF-8")
 sys.stdout = open("information_about_player.txt", "r+")
 
 global_flag_of_death = False
-count_kill = 0
 
 
 class MainTamg:
@@ -111,7 +110,7 @@ class Enemy(pygame.sprite.Sprite):
         self.attack = attack
     
     def update(self, pos_player, player):
-        global global_flag_of_death, count_kill
+        global global_flag_of_death
         
         self.rect.x -= self.speed
         
@@ -123,7 +122,7 @@ class Enemy(pygame.sprite.Sprite):
             if self.health <= 0:
                 player.CP += 5
                 player.update_combat_power()
-                count_kill += 1
+                player.count_kill += 1
                 self.kill()
 
         
@@ -204,13 +203,14 @@ class Player(pygame.sprite.Sprite):
     def __init__(self, hp=1000, atc=50, x=30, y=250,
                  speed=7, jump_f=False, jump_count=8,
                  walk_count=0, walk_left=None,
-                 walk_right=None, CP=300):
+                 walk_right=None, CP=300, count_kill=0):
         
         pygame.sprite.Sprite.__init__(self)
         
         self.CP = CP
         self.atc, self.hp = atc, hp
         self.start_atc, self.start_hp = atc, hp
+        self.count_kill = count_kill
         
         self.walk_left = walk_left
         self.walk_right = walk_right
@@ -288,7 +288,7 @@ def main():
         walk_right = tamg.run_right()
         walk_left = tamg.run_left()
         
-        player = Player(walk_right=walk_right, walk_left=walk_left, hp=int(input()), atc=int(input()), CP=int(input()))
+        player = Player(walk_right=walk_right, walk_left=walk_left, count_kill=int(input()), hp=int(input()), atc=int(input()), CP=int(input()))
         player.update_combat_power()
 
         clock = pygame.time.Clock()
@@ -376,7 +376,7 @@ def main():
                     info_enemies_count = label.render(f"Врагов: {len(enemies)}", False, "green")
                     info_enemies_count_rect = info_enemies_count.get_rect(topleft=(446, 400))
                     
-                    info_enemies_count_kill = label.render(f"Убито: {count_kill}", False, "green")
+                    info_enemies_count_kill = label.render(f"Убито: {player.count_kill}", False, "green")
                     info_enemies_count_kill_rect = info_enemies_count.get_rect(topleft=(446, 440))
                     
                     screen.blit(add_enemy5_button, add_enemy5_button_rect)
@@ -493,6 +493,7 @@ def main():
             
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
+                print(player.count_kill)
                 print(player.start_hp)
                 print(player.start_atc)
                 print(player.CP)
