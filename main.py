@@ -112,13 +112,12 @@ class Enemy(pygame.sprite.Sprite):
         self.health = health
         self.attack = attack
     
-    def update(self, pos_player=None, player=None, take_hp=None):
+    def update(self, pos_player=None, player=None, take_hp=None, other_rect=None):
         global global_flag_of_death
         
-        self.rect.x -= self.speed
-        
         if take_hp != None:
-            self.health -= take_hp
+            if self.rect.colliderect(other_rect):
+                self.health -= take_hp
         
         
         if pos_player != None:
@@ -128,13 +127,13 @@ class Enemy(pygame.sprite.Sprite):
                 if player.hp <= 0:
                     global_flag_of_death = True
                     player.status = "death"
+            self.rect.x -= self.speed
+            if self.rect.x < -10:
+                self.kill()
         if self.health <= 0:
             player.CP += 5
             player.update_combat_power()
             player.count_kill += 1
-            self.kill()
-
-        if self.rect.x < -10:
             self.kill()
             
 
@@ -166,7 +165,7 @@ class Particle(pygame.sprite.Sprite):
         self.rect.y += self.velocity[1]
         # убиваем, если частица ушла за экран
         if enemies:
-            enemies.update(take_hp=player.atc, player=player)
+            enemies.update(take_hp=player.atc, player=player, other_rect=self.rect)
         if not self.rect.colliderect(screen_rect):
             self.kill()
 
