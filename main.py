@@ -9,6 +9,9 @@ sys.stdin = open("information_about_player.txt", "r+", encoding="UTF-8")
 sys.stdout = open("information_about_player.txt", "r+")
 
 global_flag_of_death = False
+screen_rect = (0, 0, 571, 321)
+
+sprites_attack_fire_1 = pygame.sprite.Group()
 
 
 class MainTamg:
@@ -109,101 +112,74 @@ class Enemy(pygame.sprite.Sprite):
         self.health = health
         self.attack = attack
     
-    def update(self, pos_player, player):
+    def update(self, pos_player=None, player=None, take_hp=None):
         global global_flag_of_death
         
         self.rect.x -= self.speed
         
-        if pos_player.colliderect(self.rect):
-            player.hp -= self.attack
-            self.health -= player.atc
-            if player.hp <= 0:
-                global_flag_of_death = True
-            if self.health <= 0:
-                player.CP += 5
-                player.update_combat_power()
-                player.count_kill += 1
-                self.kill()
-
+        if take_hp != None:
+            self.health -= take_hp
         
+        
+        if pos_player != None:
+            if pos_player.colliderect(self.rect):
+                player.hp -= self.attack
+                self.health -= player.atc
+                if player.hp <= 0:
+                    global_flag_of_death = True
+                    player.status = "death"
+        if self.health <= 0:
+            player.CP += 5
+            player.update_combat_power()
+            player.count_kill += 1
+            self.kill()
+
         if self.rect.x < -10:
             self.kill()
-    
-    # def die(self):
-    #     if self.rect.x < -10:
-    #         self.kill()
-    #     # pass
-    
-    # def get_info(self):
-    #     dict_info = {"x": self.rect.x, "y": self.rect.y,
-    #                  "hp": self.health, "atc": self.attack}
-    #     return dict_info
+            
+
+class Particle(pygame.sprite.Sprite):
+    # сгенерируем частицы разного размера
+    fire = [pygame.image.load("attack/fire/fireattack_16_1.png")]
+    for scale in (5, 10, 20):
+        fire.append(pygame.transform.scale(fire[0], (scale, scale)))
+
+    def __init__(self, pos, dx, dy):
+        super().__init__(sprites_attack_fire_1)
+        self.image = random.choice(self.fire)
+        self.rect = self.image.get_rect()
+
+        # у каждой частицы своя скорость — это вектор
+        self.velocity = [dx, dy]
+        # и свои координаты
+        self.rect.x, self.rect.y = pos
+
+        # гравитация будет одинаковой (значение константы)
+        self.gravity = 0.5
+
+    def update(self, player, enemies):
+        # применяем гравитационный эффект: 
+        # движение с ускорением под действием гравитации
+        self.velocity[1] += self.gravity
+        # перемещаем частицу
+        self.rect.x += self.velocity[0]
+        self.rect.y += self.velocity[1]
+        # убиваем, если частица ушла за экран
+        if enemies:
+            enemies.update(take_hp=player.atc, player=player)
+        if not self.rect.colliderect(screen_rect):
+            self.kill()
 
 
-COLOR_INACTIVE = pygame.Color('lightskyblue3')
-COLOR_ACTIVE = pygame.Color('dodgerblue2')
-FONT = pygame.font.Font(None, 40)
 global_SM_enemies = 5 # Summoning_multiple_enemies
-
-
-class InputBox:
-    def __init__(self, x, y, w, h, text=''):
-        self.rect = pygame.Rect(x, y, w, h)
-        self.color = COLOR_INACTIVE
-        self.text = text
-        self.txt_surface = FONT.render(text, True, self.color)
-        self.active = False
-
-    def handle_event(self, event):
-        global global_SM_enemies
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            # If the user clicked on the input_box rect.
-            if self.rect.collidepoint(event.pos):
-                # Toggle the active variable.
-                self.active = not self.active
-            else:
-                self.active = False
-            # Change the current color of the input box.
-            if self.active:
-                self.color = COLOR_ACTIVE
-            else:
-                self.color = COLOR_INACTIVE
-                self.text = ""
-        if event.type == pygame.KEYDOWN:
-            if self.active:
-                if event.key == pygame.K_RETURN:
-                    print(self.text)
-                    try:
-                        global_SM_enemies = int(self.text)
-                    except:
-                        self.text = "Error"
-                elif event.key == pygame.K_BACKSPACE:
-                    self.text = self.text[:-1]
-                else:
-                    self.text += event.unicode
-                # Re-render the text.
-                self.txt_surface = FONT.render(self.text, True, self.color)
-
-    def update(self):
-        # Resize the box if the text is too long.
-        width = max(200, self.txt_surface.get_width()+10)
-        self.rect.w = width
-
-    def draw(self, screen):
-        # Blit the text.
-        screen.blit(self.txt_surface, (self.rect.x+5, self.rect.y+5))
-        # Blit the rect.
-        pygame.draw.rect(screen, self.color, self.rect, 2)
-    
-    def clear_text(self):
-        self.text = ""
 
 
 class Player(pygame.sprite.Sprite):
     def __init__(self, hp=1000, atc=50, x=30, y=250,
                  speed=7, jump_f=False, jump_count=8,
                  walk_count=0, walk_left=None,
-                 walk_right=None, CP=300, count_kill=0):
+                 walk_right=None, CP=300,
+                 count_kill=0, status="Alive"):
         
         pygame.sprite.Sprite.__init__(self)
         
@@ -211,6 +187,7 @@ class Player(pygame.sprite.Sprite):
         self.atc, self.hp = atc, hp
         self.start_atc, self.start_hp = atc, hp
         self.count_kill = count_kill
+        self.status = status
         
         self.walk_left = walk_left
         self.walk_right = walk_right
@@ -276,6 +253,15 @@ class Player(pygame.sprite.Sprite):
         self.hp += 3
 
 
+def create_particles(position):
+        # количество создаваемых частиц
+        particle_count = 20
+        # возможные скорости
+        numbers = range(-5, 6)
+        for _ in range(particle_count):
+            Particle(position, random.choice(numbers), random.choice(numbers))
+
+
 def main():
     if True: # чисто для того, чтоб скрыть создание переменных. Можно удалить
         x, y = 1280, 720 # размер экрана
@@ -323,7 +309,7 @@ def main():
         info_rect = info.get_rect(topleft=(870, 340))
         
         add_enemy5_button = label.render("Добавить 5 врагов", False, "green")
-        add_enemy5_button_rect = add_enemy5_button.get_rect(topleft=(446, 360))
+        add_enemy5_button_rect = add_enemy5_button.get_rect(topleft=(446, 340))
 
         timer_button_enemy_5 = pygame.USEREVENT + 1
         pygame.time.set_timer(timer_button_enemy_5, 10000)
@@ -358,45 +344,58 @@ def main():
                 
             if True: # Infromation # Нужно для того, чтоб скрыть и упростить навигацию
                 """Information{"""
+                # info_rect = info.get_rect(topleft=(870, 340))
+                
                 info_x = label.render(f"Позиция x: {player.rect.x}", False, "green")
                 info_y = label.render(f"Позиция y: {player.rect.y}", False, "green")
                 info_speed = label.render(f"Скорость перемещения: {player.speed}", False, "green")
                 info_x_rect = info_x.get_rect(topleft=(870, 380))
                 info_y_rect = info_y.get_rect(topleft=(870, 420))
                 info_speed_rect = info_speed.get_rect(topleft=(870, 460))
+                
+                info_player_CP = label.render(f"БМ: {player.CP}", False, "green")
+                info_attack = label.render(f"ATC: {player.atc}", False, "green")
+                info_HP = label.render(f"HP: {player.hp}", False, "green")
+                info_status = label.render(f"Status: {player.status}", False, "green")
+                
+                info_attack_rect = info_attack.get_rect(topleft=(10, 380))
+                info_player_CP_rect = info_player_CP.get_rect(topleft=(10, 340))
+                info_HP_rect = info_HP.get_rect(topleft=(10, 420))
+                info_status_rect = info_status.get_rect(topleft=(10, 460))
 
                 screen.blit(info, info_rect)
                 screen.blit(info_x, info_x_rect)
                 screen.blit(info_y, info_y_rect)
                 screen.blit(info_speed, info_speed_rect)
+                
+                screen.blit(info_player_CP, info_player_CP_rect)
+                screen.blit(info_attack, info_attack_rect)
+                screen.blit(info_HP, info_HP_rect)
+                screen.blit(info_status, info_status_rect)
+                
+                info_enemies_count = label.render(f"Врагов: {len(enemies)}", False, "green")
+                info_enemies_count_rect = info_enemies_count.get_rect(topleft=(446, 380))
+                
+                info_enemies_count_kill = label.render(f"Убито: {player.count_kill}", False, "green")
+                info_enemies_count_kill_rect = info_enemies_count.get_rect(topleft=(446, 420))
+                
+                screen.blit(info_enemies_count, info_enemies_count_rect)
+                screen.blit(info_enemies_count_kill, info_enemies_count_kill_rect)
                 """}Information"""
             if not global_flag_of_death:
                 if True: # Enemy, Fullscreen, etc
                     """Enemy, Fullscreen, etc{"""
-                    info_enemies_count = label.render(f"Врагов: {len(enemies)}", False, "green")
-                    info_enemies_count_rect = info_enemies_count.get_rect(topleft=(446, 400))
-                    
-                    info_enemies_count_kill = label.render(f"Убито: {player.count_kill}", False, "green")
-                    info_enemies_count_kill_rect = info_enemies_count.get_rect(topleft=(446, 440))
-                    
                     screen.blit(add_enemy5_button, add_enemy5_button_rect)
-                    screen.blit(info_enemies_count, info_enemies_count_rect)
-                    screen.blit(info_enemies_count_kill, info_enemies_count_kill_rect)
 
-                    # for box in input_boxes:
-                    #     box.update()
-                    
-                    # for box in input_boxes:
-                    #     box.draw(screen)
-                    
-                    # screen.blit(add_some_enemies, add_some_enemies_rect)
                     if enemies:
                         enemies.draw(screen)
-                        # rect_player = pygame.rect(topleft=(player_x, player_y))
                         enemies.update(player_rect, player)
                     
                     pygame.draw.rect(screen, "white", (539, 288, 32, 32))
                     screen.blit(fullscreen, fullscreen_rect)
+                    
+                    sprites_attack_fire_1.update(player, enemies) # отрисовка первой атаки
+                    sprites_attack_fire_1.draw(screen)
                     """}Enemy, Fullscreen, etc"""
                 
                 if True: # Перемещение персонажа
@@ -537,14 +536,14 @@ def main():
                     walk = walk_right[:]
                 if add_enemy5_button_rect.collidepoint(pos_mouse):
                     pos_x = 500
-                    for i in range(count_enemies):
-                        enemies.add(Enemy(pos_x, y=250))
+                    if player.count_kill % 1000 <= 4:
+                        path_of_the_enemy = "enemy\ghost_2_small.png"
+                    else:
+                        path_of_the_enemy = "enemy\ghost_small.png"
+                    for _ in range(5):
+                        enemies.add(Enemy(pos_x, y=250, filename=path_of_the_enemy))
                         pos_x -= 50
-                if add_some_enemies_rect.collidepoint(pos_mouse):
-                    pos_x = 500
-                    for i in range(global_SM_enemies):
-                        enemies.add(Enemy(pos_x, y=250))
-                        pos_x -= 50
+                create_particles(pos_mouse)
             if event.type == timer_button_enemy_5:
                 if full:
                     for i in range(5):
@@ -552,8 +551,7 @@ def main():
                         for i in range(count_enemies):
                             enemies_full.add(Enemy(x = pos_x, y = y - 200, filename="enemy/ghost_full.png"))
                             pos_x -= 200
-            # for box in input_boxes:
-            #     box.handle_event(event)
+        
         pygame.display.update()
 
         clock.tick(15)
