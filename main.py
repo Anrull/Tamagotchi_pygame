@@ -147,6 +147,7 @@ class Enemy(pygame.sprite.Sprite):
 
         if self.health <= 0:
             player.CP += 5
+            player.exp += 10
             player.update_combat_power()
             player.count_kill += 1
             self.kill()
@@ -218,7 +219,7 @@ class Player(pygame.sprite.Sprite):
                  speed=7, jump_f=False, jump_count=8,
                  walk_count=0, walk_left=None,
                  walk_right=None, CP=300,
-                 count_kill=0, status="Alive"):
+                 count_kill=0, status="Alive", lvl=1, exp=0):
         
         pygame.sprite.Sprite.__init__(self)
         
@@ -227,6 +228,9 @@ class Player(pygame.sprite.Sprite):
         self.start_atc, self.start_hp = atc, hp
         self.count_kill = count_kill
         self.status = status
+        
+        self.exp = exp
+        self.lvl = lvl
         
         self.walk_left = walk_left
         self.walk_right = walk_right
@@ -290,6 +294,10 @@ class Player(pygame.sprite.Sprite):
         self.start_hp += 3
         self.atc += 1
         self.hp += 3
+        
+        if self.exp >= self.lvl * 10000:
+            self.lvl += 1
+            self.exp = 0
 
 
 def create_particles(position):
@@ -315,7 +323,7 @@ def main():
         walk_right = tamg.run_right()
         walk_left = tamg.run_left()
         
-        player = Player(walk_right=walk_right, walk_left=walk_left, count_kill=int(input()), hp=int(input()), atc=int(input()), CP=int(input()))
+        player = Player(exp=int(input()), lvl=int(input()), walk_right=walk_right, walk_left=walk_left, count_kill=int(input()), hp=int(input()), atc=int(input()), CP=int(input()))
         player.update_combat_power()
         
         show_hp = Show_HP()
@@ -367,8 +375,8 @@ def main():
         
         enemies_full = pygame.sprite.Group()
         
-        add_some_enemies = label.render("Добавить", False, "green")
-        add_some_enemies_rect = add_some_enemies.get_rect(topleft=(446, y - 55))
+        # add_some_enemies = label.render("Добавить", False, "green")
+        # add_some_enemies_rect = add_some_enemies.get_rect(topleft=(446, y - 55))
         
         # input_box_enemies = InputBox(x=446 + 140, y=y - 60, w=10, h=40)
         # input_boxes = [input_box_enemies]
@@ -403,11 +411,15 @@ def main():
                 info_attack = label.render(f"ATC: {player.atc}", False, "green")
                 info_HP = label.render(f"HP: {player.hp}", False, "green")
                 info_status = label.render(f"Status: {player.status}", False, "green")
+                info_exp = label.render(f"EXP: {player.exp}", False, "green")
+                info_lvl = label.render(f"Lvl: {player.lvl}", False, "green")
                 
                 info_attack_rect = info_attack.get_rect(topleft=(10, 380))
                 info_player_CP_rect = info_player_CP.get_rect(topleft=(10, 340))
                 info_HP_rect = info_HP.get_rect(topleft=(10, 420))
                 info_status_rect = info_status.get_rect(topleft=(10, 460))
+                info_exp_rect = info_exp.get_rect(topleft=(10, 500))
+                info_lvl_rect = info_lvl.get_rect(topleft=(10, 540))
 
                 screen.blit(info, info_rect)
                 screen.blit(info_x, info_x_rect)
@@ -418,6 +430,8 @@ def main():
                 screen.blit(info_attack, info_attack_rect)
                 screen.blit(info_HP, info_HP_rect)
                 screen.blit(info_status, info_status_rect)
+                screen.blit(info_exp, info_exp_rect)
+                screen.blit(info_lvl, info_lvl_rect)
                 
                 info_enemies_count = label.render(f"Врагов: {len(enemies)}", False, "green")
                 info_enemies_count_rect = info_enemies_count.get_rect(topleft=(446, 380))
@@ -541,10 +555,12 @@ def main():
             
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                print(player.count_kill)
-                print(player.start_hp)
-                print(player.start_atc)
-                print(player.CP)
+                print(player.exp)   # 0
+                print(player.lvl)   # 1
+                print(player.count_kill)    # 0
+                print(player.start_hp)  # 1000
+                print(player.start_atc) # 100
+                print(player.CP)    # 300
                 running = False
             if event.type == pygame.KEYDOWN:
                 if not full:
@@ -598,6 +614,7 @@ def main():
                     # player.start_atc -= 100
                     player.hp = player.start_hp
                     # player.CP -= 1000
+                    player.status = "Alive"
                     if enemies:
                         enemies.update(die=1)
                 create_particles(pos_mouse)
@@ -605,9 +622,8 @@ def main():
                 if full:
                     for i in range(5):
                         pos_x = x + 500
-                        for i in range(count_enemies):
-                            enemies_full.add(Enemy(x = pos_x, y = y - 200, filename="enemy/ghost_full.png"))
-                            pos_x -= 200
+                        enemies_full.add(Enemy(x = pos_x, y = y - 200, filename="enemy/ghost_full.png"))
+                        pos_x -= 200
         
         pygame.display.update()
 
