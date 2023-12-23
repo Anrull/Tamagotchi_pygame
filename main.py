@@ -13,6 +13,17 @@ screen_rect = (0, 0, 571, 321)
 
 sprites_attack_fire_1 = pygame.sprite.Group()
 
+images_hp_paths = ["health\hp_0.png",
+                   "health\hp_1.png",
+                   "health\hp_2.png",
+                   "health\hp_3.png",
+                   "health\hp_4.png",
+                   "health\hp_5.png"]
+
+
+def images_hp():
+    return [pygame.image.load(i).convert_alpha() for i in images_hp_paths]
+
 
 class MainTamg:
     def __init__(self, health=1000, attack=100):
@@ -101,7 +112,7 @@ class MainTamg:
 class Enemy(pygame.sprite.Sprite):
     def __init__(self, x=500, y=250, speed=7,
                  filename="enemy/ghost_small.png",
-                 health=100, attack=10):
+                 health=100, attack=100):
         
         pygame.sprite.Sprite.__init__(self)
         
@@ -112,12 +123,13 @@ class Enemy(pygame.sprite.Sprite):
         self.health = health
         self.attack = attack
     
-    def update(self, pos_player=None, player=None, take_hp=None, other_rect=None):
+    def update(self, pos_player=None, player=None, take_hp=None, other_rect=None, other=None):
         global global_flag_of_death
         
         if take_hp != None:
             if self.rect.colliderect(other_rect):
                 self.health -= take_hp
+                other.kill()
         
         
         if pos_player != None:
@@ -135,6 +147,31 @@ class Enemy(pygame.sprite.Sprite):
             player.update_combat_power()
             player.count_kill += 1
             self.kill()
+
+
+class Show_HP(pygame.sprite.Sprite):
+    def __init__(self):
+        pygame.sprite.Sprite.__init__(self)
+        
+        self.images = images_hp()
+        
+    def update(self, screen, player):
+        procent_HP = int((player.hp / player.start_hp) * 100)
+        image_hp = None
+        if 100 <= procent_HP and procent_HP > 80:
+            image_hp = self.images[5]
+        elif 80 <= procent_HP and procent_HP > 60:
+            image_hp = self.images[4]
+        elif 60 <= procent_HP and procent_HP > 40:
+            image_hp = self.images[3]
+        elif 40 <= procent_HP and procent_HP > 20:
+            image_hp = self.images[2]
+        elif 20 <= procent_HP and procent_HP > 0:
+            image_hp = self.images[1]
+        elif procent_HP <= 0:
+            image_hp = self.images[0]
+        if image_hp:
+            screen.blit(image_hp, (0, 0))
             
 
 class Particle(pygame.sprite.Sprite):
@@ -165,7 +202,7 @@ class Particle(pygame.sprite.Sprite):
         self.rect.y += self.velocity[1]
         # убиваем, если частица ушла за экран
         if enemies:
-            enemies.update(take_hp=player.atc, player=player, other_rect=self.rect)
+            enemies.update(take_hp=player.atc, player=player, other_rect=self.rect, other=self)
         if not self.rect.colliderect(screen_rect):
             self.kill()
 
@@ -254,7 +291,7 @@ class Player(pygame.sprite.Sprite):
 
 def create_particles(position):
         # количество создаваемых частиц
-        particle_count = 20
+        particle_count = 6
         # возможные скорости
         numbers = range(-5, 6)
         for _ in range(particle_count):
@@ -275,6 +312,8 @@ def main():
         
         player = Player(walk_right=walk_right, walk_left=walk_left, count_kill=int(input()), hp=int(input()), atc=int(input()), CP=int(input()))
         player.update_combat_power()
+        
+        show_hp = Show_HP()
 
         clock = pygame.time.Clock()
 
@@ -395,6 +434,8 @@ def main():
                     
                     sprites_attack_fire_1.update(player, enemies) # отрисовка первой атаки
                     sprites_attack_fire_1.draw(screen)
+
+                    show_hp.update(screen, player)
                     """}Enemy, Fullscreen, etc"""
                 
                 if True: # Перемещение персонажа
