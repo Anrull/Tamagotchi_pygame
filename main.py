@@ -123,15 +123,14 @@ class Enemy(pygame.sprite.Sprite):
         self.health = health
         self.attack = attack
     
-    def update(self, pos_player=None, player=None, take_hp=None, other_rect=None, other=None):
+    def update(self, pos_player=None, player=None, take_hp=None, other_rect=None, other=None, die=None):
         global global_flag_of_death
         
         if take_hp != None:
             if self.rect.colliderect(other_rect):
                 self.health -= take_hp
                 other.kill()
-        
-        
+                
         if pos_player != None:
             if pos_player.colliderect(self.rect):
                 player.hp -= self.attack
@@ -142,6 +141,10 @@ class Enemy(pygame.sprite.Sprite):
             self.rect.x -= self.speed
             if self.rect.x < -10:
                 self.kill()
+                
+        if die != None:
+            self.kill()
+
         if self.health <= 0:
             player.CP += 5
             player.update_combat_power()
@@ -299,6 +302,8 @@ def create_particles(position):
 
 
 def main():
+    global global_flag_of_death
+    
     if True: # чисто для того, чтоб скрыть создание переменных. Можно удалить
         x, y = 1280, 720 # размер экрана
         idd = random.randint(0, 1) # случайный выбор фона 
@@ -348,6 +353,9 @@ def main():
         
         add_enemy5_button = label.render("Добавить 5 врагов", False, "green")
         add_enemy5_button_rect = add_enemy5_button.get_rect(topleft=(446, 340))
+        
+        restart_button = label.render("Restart", False, "green")
+        restart_button_rect = restart_button.get_rect(topleft=(440, 280))
 
         timer_button_enemy_5 = pygame.USEREVENT + 1
         pygame.time.set_timer(timer_button_enemy_5, 10000)
@@ -464,6 +472,7 @@ def main():
                     """}Прыжок"""
             else:
                 screen.blit(gameover_small, (0, 0))
+                screen.blit(restart_button, restart_button_rect)
         else: # для full screen
             screen.blit(background_full, (0, 0)) # НЕ ТРОГАТЬ
             
@@ -583,6 +592,14 @@ def main():
                     for _ in range(5):
                         enemies.add(Enemy(pos_x, y=250, filename=path_of_the_enemy))
                         pos_x -= 50
+                if restart_button_rect.collidepoint(pos_mouse):
+                    global_flag_of_death = False
+                    # player.start_hp -= 300
+                    # player.start_atc -= 100
+                    player.hp = player.start_hp
+                    # player.CP -= 1000
+                    if enemies:
+                        enemies.update(die=1)
                 create_particles(pos_mouse)
             if event.type == timer_button_enemy_5:
                 if full:
