@@ -2,6 +2,7 @@ import pygame
 import random
 import time
 import sys
+import math
 
 pygame.init()
 
@@ -153,7 +154,7 @@ class Enemy(pygame.sprite.Sprite):
             self.kill()
 
 
-class Show_HP(pygame.sprite.Sprite):
+class Show_HP_EXP(pygame.sprite.Sprite):
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
         
@@ -162,6 +163,7 @@ class Show_HP(pygame.sprite.Sprite):
     def update(self, screen, player):
         procent_HP = int((player.hp / player.start_hp) * 100)
         image_hp = None
+        
         if 100 <= procent_HP and procent_HP > 80:
             image_hp = self.images[5]
         elif 80 <= procent_HP and procent_HP > 60:
@@ -176,7 +178,17 @@ class Show_HP(pygame.sprite.Sprite):
             image_hp = self.images[0]
         if image_hp:
             screen.blit(image_hp, (0, 0))
-            
+
+        len_exp = player.exp / player.exp_new_lvl
+        
+        # если на одном уровне с hp
+        # pygame.draw.rect(screen, (105, 105, 105), (300, 2, 269, 50))
+        # pygame.draw.rect(screen, "green", (300, 2, 269 * len_exp, 50))
+        
+        # под hp
+        pygame.draw.rect(screen, (105, 105, 105), (2, 57, 288, 10))
+        pygame.draw.rect(screen, "green", (2, 57, 288 * len_exp, 10))
+        
 
 class Particle(pygame.sprite.Sprite):
     # сгенерируем частицы разного размера
@@ -229,6 +241,8 @@ class Player(pygame.sprite.Sprite):
         self.count_kill = count_kill
         self.status = status
         
+        # self.exp_new_lvl = 10000 * (1.1)**lvl
+        self.exp_new_lvl = 10000 * math.pow(1.1, lvl)
         self.exp = exp
         self.lvl = lvl
         
@@ -295,7 +309,8 @@ class Player(pygame.sprite.Sprite):
         self.atc += 1
         self.hp += 3
         
-        if self.exp >= 10000 * (1.1)**self.lvl:
+        if self.exp >= self.exp_new_lvl and self.lvl != 99:
+            self.exp_new_lvl = 10000 * (1.1)**self.lvl
             self.lvl += 1
             self.exp = 0
 
@@ -326,7 +341,7 @@ def main():
         player = Player(exp=int(input()), lvl=int(input()), walk_right=walk_right, walk_left=walk_left, count_kill=int(input()), hp=int(input()), atc=int(input()), CP=int(input()))
         player.update_combat_power()
         
-        show_hp = Show_HP()
+        show_hp = Show_HP_EXP()
 
         clock = pygame.time.Clock()
 
@@ -411,7 +426,7 @@ def main():
                 info_attack = label.render(f"ATC: {player.atc}", False, "green")
                 info_HP = label.render(f"HP: {player.hp}", False, "green")
                 info_status = label.render(f"Status: {player.status}", False, "green")
-                info_exp = label.render(f"EXP: {player.exp}", False, "green")
+                info_exp = label.render(f"EXP: {player.exp} / {int(player.exp_new_lvl)}", False, "green")
                 info_lvl = label.render(f"Lvl: {player.lvl}", False, "green")
                 
                 info_attack_rect = info_attack.get_rect(topleft=(10, 380))
