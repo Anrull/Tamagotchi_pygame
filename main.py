@@ -11,6 +11,7 @@ sys.stdout = open("information_about_player.txt", "r+")
 
 global_flag_of_death = False
 screen_rect = (0, 0, 571, 321)
+global_SM_enemies = 5 # Summoning_multiple_enemies
 
 sprites_attack_fire_1 = pygame.sprite.Group()
 
@@ -223,7 +224,49 @@ class Particle(pygame.sprite.Sprite):
             self.kill()
 
 
-global_SM_enemies = 5 # Summoning_multiple_enemies
+class Equipment(pygame.sprite.Sprite):
+    def __init__(self, sword_name="Меч", armor_name="Доспех",
+                 helmet_name="Шлем", boots_name="Сапоги",
+                 path_sword="equipment/sword.png", path_armor="equipment/armor.png",
+                 path_helmet="equipment/helmet.png", path_boots="equipment/boots.png",
+                 sword_atc=50, helmet_hp=100, armor_hp=100, boots_speed=1, show_flag=False):
+        pygame.sprite.Sprite.__init__(self)
+
+        self.name_sword = sword_name
+        self.sword_atc = sword_atc
+        self.image_sword = pygame.image.load(path_sword).convert_alpha()
+        
+        self.name_armor = armor_name
+        self.armor_hp = armor_hp
+        self.image_armor = pygame.image.load(path_armor).convert_alpha()
+        
+        self.name_helmet = helmet_name
+        self.helmet_hp = helmet_hp
+        self.image_helmet = pygame.image.load(path_helmet).convert_alpha()
+        
+        self.name_boots = boots_name
+        self.boots_speed = boots_speed
+        self.image_boots = pygame.image.load(path_boots).convert_alpha()
+        
+        self.show_flag = show_flag
+    
+    def update_armor(self, screen):
+        pass
+    
+    def update_helmet(self, screen):
+        pass
+    
+    def update_boots(self, screen):
+        pass
+    
+    def update_sword(self, screen):
+        pass
+    
+    def show(self, screen):
+        screen.blit(self.image_helmet, (0, 0))
+        screen.blit(self.image_armor, (0, 64))
+        screen.blit(self.image_boots, (0, 128))
+        screen.blit(self.image_sword, (0, 192))
 
 
 class Player(pygame.sprite.Sprite):
@@ -338,10 +381,13 @@ def main():
         walk_right = tamg.run_right()
         walk_left = tamg.run_left()
         
-        player = Player(exp=int(input()), lvl=int(input()), walk_right=walk_right, walk_left=walk_left, count_kill=int(input()), hp=int(input()), atc=int(input()), CP=int(input()))
+        player = Player(exp=int(input()), lvl=int(input()), walk_right=walk_right,
+                        walk_left=walk_left, count_kill=int(input()),
+                        hp=int(input()), atc=int(input()), CP=int(input()))
         player.update_combat_power()
         
         show_hp = Show_HP_EXP()
+        equipment = Equipment()
 
         clock = pygame.time.Clock()
 
@@ -379,6 +425,9 @@ def main():
         
         restart_button = label.render("Restart", False, "green")
         restart_button_rect = restart_button.get_rect(topleft=(440, 280))
+        
+        equipment_button = label.render("Снаряжение", False, "green")
+        equipment_button_rect = equipment_button.get_rect(topleft=(446, 460))
 
         timer_button_enemy_5 = pygame.USEREVENT + 1
         pygame.time.set_timer(timer_button_enemy_5, 10000)
@@ -456,6 +505,8 @@ def main():
                 
                 screen.blit(info_enemies_count, info_enemies_count_rect)
                 screen.blit(info_enemies_count_kill, info_enemies_count_kill_rect)
+                
+                screen.blit(equipment_button, equipment_button_rect)
                 """}Information"""
             if not global_flag_of_death:
                 if True: # Enemy, Fullscreen, etc
@@ -499,6 +550,9 @@ def main():
                     else:
                         player.jump()
                     """}Прыжок"""
+                
+                if equipment.show_flag:
+                    equipment.show(screen)
             else:
                 screen.blit(gameover_small, (0, 0))
                 screen.blit(restart_button, restart_button_rect)
@@ -632,6 +686,8 @@ def main():
                     player.status = "Alive"
                     if enemies:
                         enemies.update(die=1)
+                if equipment_button_rect.collidepoint(pos_mouse):
+                    equipment.show_flag = True
                 create_particles(pos_mouse)
             if event.type == timer_button_enemy_5:
                 if full:
