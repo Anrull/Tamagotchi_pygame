@@ -295,7 +295,7 @@ class Player(pygame.sprite.Sprite):
         self.atc += 1
         self.hp += 3
         
-        if self.exp >= self.lvl * 10000:
+        if self.exp >= 10000 * (1.1)**self.lvl:
             self.lvl += 1
             self.exp = 0
 
