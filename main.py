@@ -149,11 +149,8 @@ class Enemy(pygame.sprite.Sprite):
             self.kill()
 
         if self.health <= 0:
-            player.CP += 5
-            player.CP_location += 5
-            player.exp += 10
+            player.update_CP_EXP_etc()
             player.update_combat_power()
-            player.count_kill += 1
             self.kill()
 
 
@@ -276,7 +273,8 @@ class Player(pygame.sprite.Sprite):
                  speed=7, jump_f=False, jump_count=8,
                  walk_count=0, walk_left=None,
                  walk_right=None, CP=300,
-                 count_kill=0, status="Alive", lvl=1, exp=0, location=0, CP_location=0):
+                 count_kill=0, status="Alive", lvl=1, exp=0,
+                 location=0, CP_location=0, special_kill=0):
 
         pygame.sprite.Sprite.__init__(self)
 
@@ -290,7 +288,7 @@ class Player(pygame.sprite.Sprite):
         self.CP_location = CP_location
 
         # self.exp_new_lvl = 10000 * (1.1)**lvl
-        self.exp_new_lvl = 10000 * math.pow(1.1, lvl)
+        self.exp_new_lvl = int(5000 * 2 * lvl)
         self.exp = exp
         self.lvl = lvl
 
@@ -313,7 +311,6 @@ class Player(pygame.sprite.Sprite):
         self.walk = self.walk_left
 
         try:
-            # screen.blit(walk[walk_count], (player_x, player_y))
             return_list = [self.walk[self.walk_count], self.rect]
             self.walk_count += 1
             return return_list
@@ -327,7 +324,6 @@ class Player(pygame.sprite.Sprite):
         self.walk = self.walk_right
 
         try:
-            # screen.blit(walk[walk_count], (player_x, player_y))
             return_list = [self.walk[self.walk_count], self.rect]
             self.walk_count += 1
             return return_list
@@ -358,13 +354,19 @@ class Player(pygame.sprite.Sprite):
         self.hp += 3
 
         if self.exp >= self.exp_new_lvl and self.lvl != 99:
-            self.exp_new_lvl = 10000 * (1.1 ** self.lvl)
+            self.exp_new_lvl = int(5000 * 2 * self.lvl)
             self.lvl += 1
             self.exp = 0
 
         if self.CP_location >= 10000 and not self.location:
             self.location = 1
             self.CP_location = 0
+    
+    def update_CP_EXP_etc(self):
+        self.CP += 5
+        self.CP_location += 5
+        self.exp += 10
+        self.count_kill += 1
 
 
 class Information:
@@ -394,7 +396,7 @@ class Information:
         info_attack = self.label.render(f"ATC: {player.atc}", False, "green")
         info_HP = self.label.render(f"HP: {player.hp}", False, "green")
         info_status = self.label.render(f"Status: {player.status}", False, "green")
-        info_exp = self.label.render(f"EXP: {player.exp} / {int(player.exp_new_lvl)}", False, "green")
+        info_exp = self.label.render(f"EXP: {player.exp} / {player.exp_new_lvl}", False, "green")
         info_lvl = self.label.render(f"Lvl: {player.lvl}", False, "green")
 
         info_attack_rect = info_attack.get_rect(topleft=(10, 380))
@@ -495,7 +497,7 @@ def main():
         equipment_button_rect = equipment_button.get_rect(topleft=(446, 460))
 
         timer_button_enemy_5 = pygame.USEREVENT + 1
-        pygame.time.set_timer(timer_button_enemy_5, 10000)
+        pygame.time.set_timer(timer_button_enemy_5, 1)
 
         full = False
 
@@ -544,11 +546,8 @@ def main():
                             run_rght = player.run_right()
                             screen.blit(run_rght[0], run_rght[1])
                         else:
-                            # screen.blit(walk[0], (player_x, player_y))
                             no_move = player.no_movement()
                             screen.blit(no_move[0], no_move[1])
-
-                        player_rect = player.rect
                         """}Перемещение пероснажа"""
 
                     if True:  # Прыжок
@@ -575,7 +574,7 @@ def main():
                         pygame.draw.rect(screen, "white", (539, 288, 32, 32))
                         screen.blit(fullscreen, fullscreen_rect)
 
-                        sprites_attack_fire_1.update(player, enemies)  # отрисовка первой атаки
+                        sprites_attack_fire_1.update(player, enemies_special)  # отрисовка первой атаки
                         sprites_attack_fire_1.draw(screen)
 
                         show_hp.update(screen, player)
@@ -608,6 +607,8 @@ def main():
                     if enemies_special:
                         enemies_special.draw(screen)
                         enemies_special.update(player.rect, player)
+                    else:
+                        enemies_special = pygame.sprite.Group()
                     # else:
                     #     player.location = 0
 
@@ -725,13 +726,16 @@ def main():
                         pos_x = x + 500
                         enemies_full.add(Enemy(x=pos_x, y=y - 200, filename="enemy/ghost_full.png"))
                         pos_x -= 200
-            if player.location and not enemies_special and not full:
+            if player.location and not enemies_special and not full and timer_button_enemy_5:
+                pygame.time.set_timer(timer_button_enemy_5, 100000)
                 enemies = pygame.sprite.Group()
                 pos_x = 500
                 for _ in range(5):
                     enemies_special.add(Enemy(attack=250, health=1000, x=pos_x, 
                                               y=250, filename="enemy/special_ghost_small.png"))
                     pos_x -= 50
+            elif not enemies_special:
+                player.location = 0
 
 
         pygame.display.update()
