@@ -255,6 +255,12 @@ class Player(pygame.sprite.Sprite):
         self.start_atc, self.start_hp = atc, hp
         self.count_kill = count_kill
         self.status = status
+        
+        self.CP_start = CP
+        self.start_session_atc, self.start_session_hp = atc, hp
+        self.count_kill_start = count_kill
+        self.start_exp = 0
+        self.start_lvl = lvl
 
         self.location = location
         self.CP_location = CP_location
@@ -327,6 +333,7 @@ class Player(pygame.sprite.Sprite):
 
         if self.exp >= self.exp_new_lvl and self.lvl != 99:
             self.exp_new_lvl = int(5000 * 2 * self.lvl)
+            self.start_exp += self.exp
             self.lvl += 1
             self.exp = 0
         
@@ -342,6 +349,16 @@ class Player(pygame.sprite.Sprite):
         self.CP_location += 5
         self.exp += 10
         self.count_kill += 1
+    
+    def result_after_death(self):
+        return {
+            "CP": self.CP - self.CP_start,
+            "ATC": self.start_atc - self.start_session_atc,
+            "HP": self.start_hp - self.start_session_hp,
+            "KILL": self.count_kill - self.count_kill_start,
+            "EXP": self.start_exp + self.exp,
+            "LVL": self.lvl - self.start_lvl
+            }
 
 
 class Information:
@@ -349,15 +366,21 @@ class Information:
         self.label = label
         self.info = label.render("Information", False, "green")
         self.info_rect = self.info.get_rect(topleft=(870, 340))
+        self.gameover_small = pygame.image.load("gameover/gameover_small_1.png").convert()
+        self.gameover_full = pygame.image.load("gameover/gameover_full_1.jpg").convert()
 
-    def update_interface(self, screen, background, image, x, y):
+    def update_interface(self, screen, background, image, x, y, start_screen):
         screen.fill((255, 255, 255))
-        screen.blit(background, (0, 0))
+        if not start_screen:
+            screen.blit(background, (0, 0))
+        else:
+            screen.fill((255, 255, 255))
         screen.blit(image, (x // 2, 0))
 
-        pygame.draw.line(screen, "black", (571, 317), (x, 317), 3)
+        pygame.draw.line(screen, "black", (0, 317), (x, 317), 3)
         pygame.draw.line(screen, "black", (426, 320), (426, y), 2)
         pygame.draw.line(screen, "black", (853, 320), (853, y), 2)
+        pygame.draw.line(screen, "black", (571, 0), (571, 317), 2)
 
     def update_information(self, screen, player, enemies):
         info_x = self.label.render(f"Позиция x: {player.rect.x}", False, "green")
@@ -402,8 +425,42 @@ class Information:
         screen.blit(info_enemies_count, info_enemies_count_rect)
         screen.blit(info_enemies_count_kill, info_enemies_count_kill_rect)
 
-    def some(self):
-        pass
+    def deathscreen(self, screen, player, full=False):
+        dict_results = player.result_after_death()
+        
+        label_CP = self.label.render(f"БМ: {dict_results['CP']}", False, "green")
+        label_atc = self.label.render(f"ATC: {dict_results['ATC']}", False, "green")
+        label_hp = self.label.render(f"HP: {dict_results['HP']}", False, "green")
+        label_kill = self.label.render(f"KILL: {dict_results['KILL']}", False, "green")
+        label_exp = self.label.render(f"EXP: {dict_results['EXP']}", False, "green")
+        label_lvl = self.label.render(f"LVL: {dict_results['LVL']}", False, "green")
+        if not full:
+            screen.blit(self.gameover_small, (0, 0))
+            
+            label_CP_rect = label_CP.get_rect(topleft=(10, 10))
+            label_atc_rect = label_atc.get_rect(topleft=(10, 60))
+            label_hp_rect = label_hp.get_rect(topleft=(10, 110))
+            label_kill_rect = label_kill.get_rect(topleft=(10, 160))
+            label_exp_rect = label_exp.get_rect(topleft=(10, 210))
+            label_lvl_rect = label_lvl.get_rect(topleft=(10, 260))
+            
+            screen.blit(label_CP, label_CP_rect)
+            screen.blit(label_atc, label_atc_rect)
+            screen.blit(label_hp, label_hp_rect)
+            screen.blit(label_kill, label_kill_rect)
+            screen.blit(label_exp, label_exp_rect)
+            screen.blit(label_lvl, label_lvl_rect)
+        else:
+            screen.blit(self.gameover_full, (0, 0))
+            
+            label_CP_rect = label_CP.get_rect(topleft=(10, 10))
+            label_atc_rect = label_atc.get_rect(topleft=(10, 60))
+            label_hp_rect = label_hp.get_rect(topleft=(10, 110))
+            label_kill_rect = label_kill.get_rect(topleft=(10, 160))
+            label_exp_rect = label_exp.get_rect(topleft=(10, y - 60))
+            label_lvl_rect = label_lvl.get_rect(topleft=(10, y - 10))
+
+            
 
 
 def create_particles(position):
@@ -423,7 +480,8 @@ def main():
         screen = pygame.display.set_mode((x, y))
         pygame.display.set_caption("Тамагочи")
         
-        pygame.mixer.init()
+        start_screen = True
+        
         pygame.mixer.init()
         pygame.mixer.music.load("music/Serious_Sam_The_Second_Encounter_Corridor_of_Death_Saferty_Cover.mp3")
         pygame.mixer.music.play(-1)
@@ -444,8 +502,6 @@ def main():
 
         background = tamg.small_image_to_alpha(idd)  # малый задний фон
         background_full = tamg.full_image_to_alpha(idd)  # большой задний фон
-        gameover_small = pygame.image.load("gameover/gameover_small_1.png").convert()
-        gameover_full = pygame.image.load("gameover/gameover_full_1.jpg").convert()
 
         image = tamg.image_to_alpha("fox/fox_main_lvl1.png")  # выбери сам если не нравится
         image = pygame.transform.scale(image, (500, 300))  # отформатирование животного, чтоб влезало
@@ -465,26 +521,27 @@ def main():
 
         restart_button = label.render("Restart", False, "green")
         restart_button_rect = restart_button.get_rect(topleft=(440, 280))
+        
+        start_button = label.render("Start", True, "red")
+        start_button_rect = start_button.get_rect(topleft=(235, 145))
 
         timer_button_enemy_5 = pygame.USEREVENT + 1
-        pygame.time.set_timer(timer_button_enemy_5, 1)
+        pygame.time.set_timer(timer_button_enemy_5, 10000)
 
         full = False
 
         enemies = pygame.sprite.Group()
-        enemies_special = pygame.sprite.Group()
 
         enemies_full = pygame.sprite.Group()
-
-        # input_box_enemies = InputBox(x=446 + 140, y=y - 60, w=10, h=40)
-        # input_boxes = [input_box_enemies]
 
     while running:
         keys = pygame.key.get_pressed()
 
         if not full:  # Если экран начальный
             background = update_image_background(player.location)
-            information.update_interface(screen, background, image, x, y)  # Отрисовка интерфейса
+            information.update_interface(screen, background, image, x, y, start_screen)  # Отрисовка интерфейса
+            if start_screen:
+                screen.blit(start_button, start_button_rect)
 
             # Information
             information.update_information(screen, player, enemies)
@@ -494,20 +551,21 @@ def main():
                     """Enemy, Fullscreen, etc{"""
                     screen.blit(add_enemy5_button, add_enemy5_button_rect)
 
-                    if enemies:
-                        enemies.draw(screen)
-                        enemies.update(player.rect, player)
+                    if not start_screen:
+                        if enemies:
+                            enemies.draw(screen)
+                            enemies.update(player.rect, player)
 
-                    pygame.draw.rect(screen, "white", (539, 288, 32, 32))
-                    screen.blit(fullscreen, fullscreen_rect)
+                        pygame.draw.rect(screen, "white", (539, 288, 32, 32))
+                        screen.blit(fullscreen, fullscreen_rect)
 
-                    sprites_attack_fire_1.update(player, enemies)  # отрисовка первой атаки
-                    sprites_attack_fire_1.draw(screen)
+                        sprites_attack_fire_1.update(player, enemies)  # отрисовка первой атаки
+                        sprites_attack_fire_1.draw(screen)
 
-                    show_hp.update(screen, player)
+                        show_hp.update(screen, player)
                     """}Enemy, Fullscreen, etc"""
 
-                if True:  # Перемещение персонажа
+                if not start_screen:  # Перемещение персонажа
                     """Перемещение персонажа{"""
                     if (keys[pygame.K_a] or keys[pygame.K_LEFT]) and player.rect.x > 30:
                         run_lf = player.run_left()
@@ -529,41 +587,46 @@ def main():
                         player.jump()
                     """}Прыжок"""
             else:
-                screen.blit(gameover_small, (0, 0))
+                information.deathscreen(screen, player)
                 screen.blit(restart_button, restart_button_rect)
         else:  # для full screen
             background_full = update_image_background(player.location, True)
             screen.blit(background_full, (0, 0))  # НЕ ТРОГАТЬ
+            if start_screen:
+                screen.fill("WHITE")
 
-            if True:  # Передвижение персонажа
-                """Передвижение персонажа{"""
-                if (keys[pygame.K_a] or keys[pygame.K_LEFT]) and player.rect.x > 30:
-                    run_lf = player.run_left()
-                    screen.blit(run_lf[0], run_lf[1])
-                elif (keys[pygame.K_d] or keys[pygame.K_RIGHT]) and player.rect.x < x - 150:
-                    run_rght = player.run_right()
-                    screen.blit(run_rght[0], run_rght[1])
+            if not start_screen:  # Передвижение персонажа
+                if not global_flag_of_death:
+                    """Передвижение персонажа{"""
+                    if (keys[pygame.K_a] or keys[pygame.K_LEFT]) and player.rect.x > 30:
+                        run_lf = player.run_left()
+                        screen.blit(run_lf[0], run_lf[1])
+                    elif (keys[pygame.K_d] or keys[pygame.K_RIGHT]) and player.rect.x < x - 150:
+                        run_rght = player.run_right()
+                        screen.blit(run_rght[0], run_rght[1])
+                    else:
+                        # screen.blit(walk[0], (player_x, player_y))
+                        no_move = player.no_movement()
+                        screen.blit(no_move[0], no_move[1])
+                    """}Передвижение персонажа"""
+
+                    if True:  # прыжок
+                        """Прыжок персонажа{"""
+                        if not player.jump_f:
+                            if keys[pygame.K_SPACE]:
+                                player.jump_f = True
+                        else:
+                            player.jump()
+                        """}Прыжок персонажа"""
+
+                    if enemies_full:  # Enemies
+                        enemies_full.draw(screen)
+                        enemies_full.update()
                 else:
-                    # screen.blit(walk[0], (player_x, player_y))
-                    no_move = player.no_movement()
-                    screen.blit(no_move[0], no_move[1])
-                """}Передвижение персонажа"""
-
-            if True:  # прыжок
-                """Прыжок персонажа{"""
-                if not player.jump_f:
-                    if keys[pygame.K_SPACE]:
-                        player.jump_f = True
-                else:
-                    player.jump()
-                """}Прыжок персонажа"""
-
+                    information.deathscreen(screen, player, full)
+                    screen.blit(restart_button, restart_button_rect)
             pygame.draw.rect(screen, "white", (x - 32, 0, 32, 32))
             screen.blit(minimise, minimise_rect)
-
-            if enemies_full:  # Enemies
-                enemies_full.draw(screen)
-                enemies_full.update()
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -585,6 +648,16 @@ def main():
                                         walk_left=tamg.run_left(True), count_kill=player.count_kill,
                                         hp=player.hp, atc=player.atc, CP=player.CP, x=150, y=y - 150,
                                         jump_count=10, speed=player.speed * 2)
+                    if event.key == pygame.K_LSHIFT:
+                        pos_x = 500
+                        if player.count_kill % 1000 <= 4:
+                            path_of_the_enemy = "enemy/ghost_2_small.png"
+                        else:
+                            path_of_the_enemy = "enemy/ghost_small.png"
+                        for _ in range(5):
+                            enemies.add(Enemy(pos_x, y=250, attack=100 * (player.location + 1) + 100,
+                                            health=100 * (player.location + 1), filename=path_of_the_enemy))
+                            pos_x -= 50
                 else:
                     if event.key == pygame.K_f or event.key == pygame.K_ESCAPE:
                         full = False
@@ -623,6 +696,8 @@ def main():
                     player.status = "Alive"
                     if enemies:
                         enemies.update(die=1)
+                if start_button_rect.collidepoint(pos_mouse):
+                    start_screen = False
                 if minimise_rect.collidepoint(pos_mouse):
                     full = False
 
@@ -649,3 +724,14 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
+sys.exit()
+print('кукей')
+# 0
+# 1
+# 0
+# 1000
+# 100
+# 300
+# 0
+# 0
