@@ -1,8 +1,6 @@
 import pygame
 import random
-import time
 import sys
-import math
 
 pygame.init()
 
@@ -13,6 +11,7 @@ global_flag_of_death = False
 screen_rect = (0, 0, 571, 321)
 global_SM_enemies = 5  # Summoning_multiple_enemies
 x, y = 1280, 720  # размер экрана
+FPS = 15
 
 backgrounds_small = {
     0: "background/background_2_small.png",
@@ -375,7 +374,7 @@ class Information:
             screen.blit(background, (0, 0))
         else:
             screen.fill((255, 255, 255))
-        screen.blit(image, (x // 2, 0))
+        screen.blit(image, (571, 0))
 
         pygame.draw.line(screen, "black", (0, 317), (x, 317), 3)
         pygame.draw.line(screen, "black", (426, 320), (426, y), 2)
@@ -443,22 +442,22 @@ class Information:
             label_kill_rect = label_kill.get_rect(topleft=(10, 160))
             label_exp_rect = label_exp.get_rect(topleft=(10, 210))
             label_lvl_rect = label_lvl.get_rect(topleft=(10, 260))
-            
-            screen.blit(label_CP, label_CP_rect)
-            screen.blit(label_atc, label_atc_rect)
-            screen.blit(label_hp, label_hp_rect)
-            screen.blit(label_kill, label_kill_rect)
-            screen.blit(label_exp, label_exp_rect)
-            screen.blit(label_lvl, label_lvl_rect)
         else:
             screen.blit(self.gameover_full, (0, 0))
             
-            label_CP_rect = label_CP.get_rect(topleft=(10, 10))
-            label_atc_rect = label_atc.get_rect(topleft=(10, 60))
-            label_hp_rect = label_hp.get_rect(topleft=(10, 110))
-            label_kill_rect = label_kill.get_rect(topleft=(10, 160))
-            label_exp_rect = label_exp.get_rect(topleft=(10, y - 60))
-            label_lvl_rect = label_lvl.get_rect(topleft=(10, y - 10))
+            label_CP_rect = label_CP.get_rect(topleft=(10, y - 260 - 40))
+            label_atc_rect = label_atc.get_rect(topleft=(10, y - 210 - 40))
+            label_hp_rect = label_hp.get_rect(topleft=(10, y - 160 - 40))
+            label_kill_rect = label_kill.get_rect(topleft=(10, y - 110 - 40))
+            label_exp_rect = label_exp.get_rect(topleft=(10, y - 60 - 40))
+            label_lvl_rect = label_lvl.get_rect(topleft=(10, y - 10 - 40))
+
+        screen.blit(label_CP, label_CP_rect)
+        screen.blit(label_atc, label_atc_rect)
+        screen.blit(label_hp, label_hp_rect)
+        screen.blit(label_kill, label_kill_rect)
+        screen.blit(label_exp, label_exp_rect)
+        screen.blit(label_lvl, label_lvl_rect)
 
             
 
@@ -503,8 +502,10 @@ def main():
         background = tamg.small_image_to_alpha(idd)  # малый задний фон
         background_full = tamg.full_image_to_alpha(idd)  # большой задний фон
 
-        image = tamg.image_to_alpha("fox/fox_main_lvl1.png")  # выбери сам если не нравится
-        image = pygame.transform.scale(image, (500, 300))  # отформатирование животного, чтоб влезало
+        # image = tamg.image_to_alpha("fox/fox_main_lvl1.png")  # выбери сам если не нравится
+        # image = pygame.transform.scale(image, (500, 300))  # отформатирование животного, чтоб влезало
+        image = pygame.image.load("fox/fox_main_version3.png")
+        image = pygame.transform.scale(image, (x - 571, 317))
 
         fullscreen = tamg.image_to_alpha("icons/fullscreen.png")
         fullscreen_rect = fullscreen.get_rect(topleft=(547, 296))
@@ -521,6 +522,7 @@ def main():
 
         restart_button = label.render("Restart", False, "green")
         restart_button_rect = restart_button.get_rect(topleft=(440, 280))
+        restart_button_rect_full = restart_button.get_rect(topleft=(x - 150, y - 100))
         
         start_button = label.render("Start", True, "red")
         start_button_rect = start_button.get_rect(topleft=(235, 145))
@@ -622,9 +624,11 @@ def main():
                     if enemies_full:  # Enemies
                         enemies_full.draw(screen)
                         enemies_full.update()
+                    
+                    show_hp.update(screen, player)
                 else:
                     information.deathscreen(screen, player, full)
-                    screen.blit(restart_button, restart_button_rect)
+                    screen.blit(restart_button, restart_button_rect_full)
             pygame.draw.rect(screen, "white", (x - 32, 0, 32, 32))
             screen.blit(minimise, minimise_rect)
 
@@ -687,7 +691,7 @@ def main():
                         enemies.add(Enemy(pos_x, y=250, attack=100 * (player.location + 1) + 100,
                                           health=100 * (player.location + 1), filename=path_of_the_enemy))
                         pos_x -= 50
-                if restart_button_rect.collidepoint(pos_mouse):
+                if restart_button_rect.collidepoint(pos_mouse) or restart_button_rect_full.collidepoint(pos_mouse):
                     global_flag_of_death = False
                     # player.start_hp -= 300
                     # player.start_atc -= 100
@@ -717,7 +721,7 @@ def main():
 
         pygame.display.update()
 
-        clock.tick(15)
+        clock.tick(FPS)
 
     pygame.quit()
 
@@ -725,8 +729,6 @@ def main():
 if __name__ == "__main__":
     main()
     
-sys.exit()
-print('кукей')
 # 0
 # 1
 # 0
