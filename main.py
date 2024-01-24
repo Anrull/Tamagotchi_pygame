@@ -9,6 +9,7 @@ sys.stdout = open("information_about_player.txt", "r+")
 
 global_flag_of_death = False
 screen_rect = (0, 0, 571, 321)
+screen_rect_full = (0, 0, 1280, 720)
 global_SM_enemies = 5  # Summoning_multiple_enemies
 x, y = 1280, 720  # размер экрана
 FPS = 15
@@ -225,7 +226,7 @@ class Particle(pygame.sprite.Sprite):
         # гравитация будет одинаковой (значение константы)
         self.gravity = 0.5
 
-    def update(self, player, enemies):
+    def update(self, player, enemies, full):
         # применяем гравитационный эффект: 
         # движение с ускорением под действием гравитации
         self.velocity[1] += self.gravity
@@ -235,8 +236,12 @@ class Particle(pygame.sprite.Sprite):
         # убиваем, если частица ушла за экран
         if enemies:
             enemies.update(take_hp=player.atc, player=player, other_rect=self.rect, other=self)
-        if not self.rect.colliderect(screen_rect):
-            self.kill()
+        if not full:
+            if not self.rect.colliderect(screen_rect):
+                self.kill()
+        else:
+            if not self.rect.colliderect(screen_rect_full):
+                self.kill()
 
 
 class Player(pygame.sprite.Sprite):
@@ -382,6 +387,10 @@ class Information:
         pygame.draw.line(screen, "black", (571, 0), (571, 317), 2)
 
     def update_information(self, screen, player, enemies):
+        if player.status != "Alive":
+            grey_button = self.label.render("Добавить 5 врагов", False, "grey")
+            grey_button_rect = grey_button.get_rect(topleft=(446, 340))
+            screen.blit(grey_button, grey_button_rect)
         info_x = self.label.render(f"Позиция x: {player.rect.x}", False, "green")
         info_y = self.label.render(f"Позиция y: {player.rect.y}", False, "green")
         info_speed = self.label.render(f"Скорость перемещения: {player.speed}", False, "green")
@@ -561,7 +570,7 @@ def main():
                         pygame.draw.rect(screen, "white", (539, 288, 32, 32))
                         screen.blit(fullscreen, fullscreen_rect)
 
-                        sprites_attack_fire_1.update(player, enemies)  # отрисовка первой атаки
+                        sprites_attack_fire_1.update(player, enemies, full)  # отрисовка первой атаки
                         sprites_attack_fire_1.draw(screen)
 
                         show_hp.update(screen, player)
@@ -591,7 +600,7 @@ def main():
             else:
                 information.deathscreen(screen, player)
                 screen.blit(restart_button, restart_button_rect)
-        else:  # для full screen
+        else:  # для fullscreen
             background_full = update_image_background(player.location, True)
             screen.blit(background_full, (0, 0))  # НЕ ТРОГАТЬ
             if start_screen:
@@ -625,6 +634,9 @@ def main():
                         enemies_full.draw(screen)
                         enemies_full.update()
                     
+                    sprites_attack_fire_1.update(player, enemies, full)  # отрисовка первой атаки
+                    sprites_attack_fire_1.draw(screen)
+                    
                     show_hp.update(screen, player)
                 else:
                     information.deathscreen(screen, player, full)
@@ -644,6 +656,8 @@ def main():
                 # print(player.location)  # 0
                 running = False
             if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE and start_screen:
+                    start_screen = False
                 if not full:
                     if event.key == pygame.K_f:
                         full = True
@@ -652,12 +666,13 @@ def main():
                                         walk_left=tamg.run_left(True), count_kill=player.count_kill,
                                         hp=player.hp, atc=player.atc, CP=player.CP, x=150, y=y - 150,
                                         jump_count=10, speed=player.speed * 2)
-                    if event.key == pygame.K_LSHIFT:
+                    if event.key == pygame.K_LSHIFT and not global_flag_of_death:
                         pos_x = 500
-                        if player.count_kill % 1000 <= 4:
-                            path_of_the_enemy = "enemy/ghost_2_small.png"
-                        else:
-                            path_of_the_enemy = "enemy/ghost_small.png"
+                        # if player.count_kill % 1000 <= 4:
+                        #     path_of_the_enemy = "enemy/ghost_2_small.png"
+                        # else:
+                        #     
+                        path_of_the_enemy = "enemy/ghost_small.png"
                         for _ in range(5):
                             enemies.add(Enemy(pos_x, y=250, attack=100 * (player.location + 1) + 100,
                                             health=100 * (player.location + 1), filename=path_of_the_enemy))
@@ -681,12 +696,13 @@ def main():
                                     hp=player.hp, atc=player.atc, CP=player.CP, x=150, y=y - 150,
                                     jump_count=10, speed=player.speed * 2,
                                     CP_location=player.CP_location, location=player.location)
-                if add_enemy5_button_rect.collidepoint(pos_mouse) and not player.location:
+                if add_enemy5_button_rect.collidepoint(pos_mouse) and not global_flag_of_death:
                     pos_x = 500
-                    if player.count_kill % 1000 <= 4:
-                        path_of_the_enemy = "enemy/ghost_2_small.png"
-                    else:
-                        path_of_the_enemy = "enemy/ghost_small.png"
+                    # if player.count_kill % 1000 <= 4:
+                    #     path_of_the_enemy = "enemy/ghost_2_small.png"
+                    # else:
+                    #     
+                    path_of_the_enemy = "enemy/ghost_small.png"
                     for _ in range(5):
                         enemies.add(Enemy(pos_x, y=250, attack=100 * (player.location + 1) + 100,
                                           health=100 * (player.location + 1), filename=path_of_the_enemy))
