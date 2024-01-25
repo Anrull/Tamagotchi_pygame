@@ -490,9 +490,9 @@ def main():
         
         start_screen = True
         
-        pygame.mixer.init()
-        pygame.mixer.music.load("music/Serious_Sam_The_Second_Encounter_Corridor_of_Death_Saferty_Cover.mp3")
-        pygame.mixer.music.play(-1)
+        # pygame.mixer.init()
+        # pygame.mixer.music.load("music/Serious_Sam_The_Second_Encounter_Corridor_of_Death_Saferty_Cover.mp3")
+        # pygame.mixer.music.play(-1)
 
         tamg = MainTamg()
 
@@ -535,9 +535,10 @@ def main():
         
         start_button = label.render("Start", True, "red")
         start_button_rect = start_button.get_rect(topleft=(235, 145))
+        start_button_rect_full = start_button.get_rect(topleft=(x//2 - 40, y//2 - 40))
 
         timer_button_enemy_5 = pygame.USEREVENT + 1
-        pygame.time.set_timer(timer_button_enemy_5, 10000)
+        pygame.time.set_timer(timer_button_enemy_5, 5000)
 
         full = False
 
@@ -603,8 +604,6 @@ def main():
         else:  # для fullscreen
             background_full = update_image_background(player.location, True)
             screen.blit(background_full, (0, 0))  # НЕ ТРОГАТЬ
-            if start_screen:
-                screen.fill("WHITE")
 
             if not start_screen:  # Передвижение персонажа
                 if not global_flag_of_death:
@@ -630,9 +629,9 @@ def main():
                             player.jump()
                         """}Прыжок персонажа"""
 
-                    if enemies_full:  # Enemies
+                    if enemies_full:
                         enemies_full.draw(screen)
-                        enemies_full.update()
+                        enemies_full.update(player.rect, player)
                     
                     sprites_attack_fire_1.update(player, enemies, full)  # отрисовка первой атаки
                     sprites_attack_fire_1.draw(screen)
@@ -641,6 +640,9 @@ def main():
                 else:
                     information.deathscreen(screen, player, full)
                     screen.blit(restart_button, restart_button_rect_full)
+            else:
+                screen.fill("WHITE")
+                screen.blit(start_button, start_button_rect_full)
             pygame.draw.rect(screen, "white", (x - 32, 0, 32, 32))
             screen.blit(minimise, minimise_rect)
 
@@ -685,6 +687,12 @@ def main():
                                         walk_left=tamg.run_left(), count_kill=player.count_kill,
                                         hp=player.hp, atc=player.atc, CP=player.CP,
                                         jump_count=8, speed=player.speed // 2)
+                    
+                    if event.key == pygame.K_LSHIFT and not global_flag_of_death:
+                        for _ in range(5):
+                            pos_x = x + 500
+                            enemies_full.add(Enemy(x=pos_x, y=y - 200, filename="enemy/ghost_full.png"))
+                            pos_x -= 200
             if event.type == pygame.MOUSEBUTTONDOWN:
                 pos_mouse = pygame.mouse.get_pos()
                 if fullscreen_rect.collidepoint(pos_mouse):
@@ -716,7 +724,7 @@ def main():
                     player.status = "Alive"
                     if enemies:
                         enemies.update(die=1)
-                if start_button_rect.collidepoint(pos_mouse):
+                if start_button_rect.collidepoint(pos_mouse) or start_button_rect_full.collidepoint(pos_mouse):
                     start_screen = False
                 if minimise_rect.collidepoint(pos_mouse):
                     full = False
@@ -729,7 +737,7 @@ def main():
                 create_particles(pos_mouse)
             if event.type == timer_button_enemy_5:
                 if full:
-                    for i in range(5):
+                    for _ in range(5):
                         pos_x = x + 500
                         enemies_full.add(Enemy(x=pos_x, y=y - 200, filename="enemy/ghost_full.png"))
                         pos_x -= 200
