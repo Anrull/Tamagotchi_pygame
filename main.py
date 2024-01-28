@@ -555,9 +555,9 @@ def main():
         
         start_screen = True
         
-        # pygame.mixer.init()
-        # pygame.mixer.music.load("music/Serious_Sam_The_Second_Encounter_Corridor_of_Death_Saferty_Cover.mp3")
-        # pygame.mixer.music.play(-1)
+        pygame.mixer.init()
+        pygame.mixer.music.load("music/Serious_Sam_The_Second_Encounter_Corridor_of_Death_Saferty_Cover.mp3")
+        pygame.mixer.music.play(-1)
 
         tamg = MainTamg()
 
