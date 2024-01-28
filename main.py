@@ -725,14 +725,14 @@ def main():
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                # print(player.exp)  # 0
-                # print(player.lvl)  # 1
-                # print(player.count_kill)  # 0
-                # print(player.start_hp)  # 1000
-                # print(player.start_atc)  # 100
-                # print(player.CP)  # 300
-                # print(player.CP_location)   # 0
-                # print(player.location)  # 0
+                print(player.exp)  # 0
+                print(player.lvl)  # 1
+                print(player.count_kill)  # 0
+                print(player.start_hp)  # 1000
+                print(player.start_atc)  # 100
+                print(player.CP)  # 300
+                print(player.CP_location)   # 0
+                print(player.location)  # 0
                 running = False
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE and start_screen:
