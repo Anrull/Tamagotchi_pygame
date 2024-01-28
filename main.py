@@ -15,6 +15,9 @@ x, y = 1280, 720  # размер экрана
 FPS = 15
 global_flag_information_screen = False
 
+color1 = (0, 0, 255)  # Начальный цвет (синий)
+color2 = (255, 0, 0)  # Конечный цвет (красный)
+
 backgrounds_small = {
     0: "background/background_2_small.png",
     1: "background/background_3_small.png",
@@ -472,7 +475,65 @@ class Information:
         screen.blit(label_lvl, label_lvl_rect)
     
     def information_screen(self, screen):
-        screen.fill((255, 255, 255))
+        for y in range(720):
+            for x in range(1280):
+                # Вычисление текущего цвета на основе градиента
+                color = (
+                    int(color1[0] + (color2[0] - color1[0]) * (x / 1280)),
+                    int(color1[1] + (color2[1] - color1[1]) * (y / 720)),
+                    int(color1[2] + (color2[2] - color1[2]) * (y / 720))
+                )
+
+                # Установка цвета пикселя на экране
+                screen.set_at((x, y), color)
+        
+        # color = (39, 192, 245)
+        color = "white"
+        
+        info_game1 = self.label.render("Эта игра была создана в рамках презентации навыков pygame", False, color)
+        info_game2 = self.label.render("Управление персонажем происходит по средством следующих кнопок:", False, color)
+        info_game3 = self.label.render(" - передвижение игрока влево", False, color)
+        info_game4 = self.label.render(" - передвижение игрока вправо", False, color)
+        info_game5 = self.label.render(" - прыжок игрока", False, color)
+        
+        info_game6 = self.label.render("Взаимодействие c врагами:", False, color)
+        info_game7 = self.label.render(" - создание врагов", False, color)
+        info_game8 = self.label.render(" - (клик по экрану) атака по врагам", False, color)
+
+        image_a = pygame.image.load("icons/a.png").convert_alpha()
+        image_d = pygame.image.load("icons/d.png").convert_alpha()
+        image_r = pygame.image.load("icons/right.png").convert_alpha()
+        image_l = pygame.image.load("icons/left.png").convert_alpha()
+        image_space = pygame.image.load("icons/space.png").convert_alpha()
+        image_shift = pygame.image.load("icons/shift.png").convert_alpha()
+        image_click = pygame.image.load("icons/click.png").convert_alpha()
+
+        info_game1_rect = info_game1.get_rect(topleft=(60, 60))
+        info_game2_rect = info_game2.get_rect(topleft=(60, 100))
+        info_game3_rect = info_game3.get_rect(topleft=(75 + 48 + 48, 140 + 8))
+        info_game4_rect = info_game4.get_rect(topleft=(75 + 48 + 48, 140 + 56))
+        info_game5_rect = info_game5.get_rect(topleft=(75 + 48 + 5, 140 + 56 + 48))
+        info_game6_rect = info_game6.get_rect(topleft=(60, 140 + 56 + 48 + 48))
+        info_game7_rect = info_game7.get_rect(topleft=(75 + 48, 140 + 56 + 48 + 48 + 48))
+        info_game8_rect = info_game8.get_rect(topleft=(75 + 48, 140 + 56 + 48 + 48 + 48 + 48))
+
+        screen.blit(info_game1, info_game1_rect)
+        screen.blit(info_game2, info_game2_rect)
+        screen.blit(info_game3, info_game3_rect)
+        screen.blit(info_game4, info_game4_rect)
+        screen.blit(info_game5, info_game5_rect)
+        screen.blit(info_game6, info_game6_rect)
+        screen.blit(info_game7, info_game7_rect)
+        screen.blit(info_game8, info_game8_rect)
+
+        screen.blit(image_a, (75, 140))
+        screen.blit(image_d, (75, 140 + 48))
+        screen.blit(image_l, (75 + 48, 140))
+        screen.blit(image_r, (75 + 48, 140 + 48))
+        screen.blit(image_space, (75 + 5, 140 + 48 + 48))
+        screen.blit(image_shift, (75, 140 + 56 + 48 + 48 + 36))
+        screen.blit(image_click, (75, 140 + 56 + 48 + 48 + 48 + 36))
+
 
 
 def create_particles(position):
